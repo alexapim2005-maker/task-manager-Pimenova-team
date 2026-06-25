@@ -9,72 +9,10 @@
             margin: 0; padding: 0; display: flex; justify-content: center; align-items: center;
             min-height: 100vh; background: #f5f6fa; font-family: Arial, sans-serif;
         }
-        #app-container { position: relative; }
         canvas { border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
-        #add-form {
-            display: none; position: absolute; bottom: 30px; left: 30px;
-            background: #fff; border: 2px solid #636e72; border-radius: 12px;
-            padding: 20px; width: 800px; z-index: 10; box-shadow: 0 8px 30px rgba(0,0,0,0.2);
-        }
-        #add-form.visible { display: block; }
-        #add-form h3 { margin: 0 0 15px 0; color: #2d3436; }
-        #add-form input, #add-form textarea {
-            padding: 8px 12px; border: 1px solid #b2bec3; border-radius: 4px;
-            font-size: 14px; font-family: Arial, sans-serif; margin-right: 10px; margin-bottom: 10px;
-        }
-        #add-form input[type="text"] { width: 200px; }
-        #add-form input[type="number"] { width: 60px; }
-        #add-form textarea { width: 350px; height: 50px; resize: vertical; vertical-align: top; }
-        #add-form .type-btn {
-            padding: 8px 15px; border: none; border-radius: 4px; cursor: pointer;
-            font-size: 13px; margin-right: 5px; background: #dfe6e9; color: #2d3436;
-        }
-        #add-form .type-btn.weekly.active { background: #6c5ce7; color: #fff; }
-        #add-form .type-btn.monthly.active { background: #e17055; color: #fff; }
-        #add-form .type-btn.onetime.active { background: #00b894; color: #fff; }
-        #add-form .assignee-btn {
-            padding: 8px 12px; border: none; border-radius: 4px; cursor: pointer;
-            font-size: 12px; margin-right: 5px; background: #dfe6e9; color: #2d3436;
-        }
-        #add-form .assignee-btn.active { background: #0984e3; color: #fff; }
-        #add-form .save-btn {
-            padding: 10px 30px; background: #00b894; color: #fff; border: none;
-            border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: bold;
-        }
-        #add-form .cancel-btn {
-            padding: 10px 20px; background: #d63031; color: #fff; border: none;
-            border-radius: 6px; cursor: pointer; font-size: 14px; margin-left: 10px;
-        }
-        #description-tooltip {
-            display: none; position: absolute; background: #2d3436; color: #fff;
-            padding: 10px 14px; border-radius: 8px; font-size: 12px;
-            max-width: 300px; z-index: 20; pointer-events: none;
-        }
     </style>
 </head>
 <body>
-    <div id="app-container">
-        <div id="add-form">
-            <h3>Новая задача</h3>
-            <input type="text" id="task-title" placeholder="Название задачи...">
-            <div>
-                <button class="type-btn weekly active" onclick="setType('weekly')">Еженед.</button>
-                <button class="type-btn monthly" onclick="setType('monthly')">Ежемес.</button>
-                <button class="type-btn onetime" onclick="setType('onetime')">Разов.</button>
-            </div>
-            <input type="number" id="task-hours" placeholder="Часы" min="1">
-            <input type="text" id="task-deadline" placeholder="Дедлайн">
-            <br>
-            <textarea id="task-description" placeholder="Описание задачи..."></textarea>
-            <br><br>
-            <span style="color:#636e72; font-size:13px;">Ответственный:</span>
-            <div id="assignee-btns"></div>
-            <br>
-            <button class="save-btn" onclick="saveTask()">💾 Сохранить</button>
-            <button class="cancel-btn" onclick="hideForm()">✕ Отмена</button>
-        </div>
-        <div id="description-tooltip"></div>
-    </div>
     <script src="sketch.js"></script>
 </body>
 </html>
