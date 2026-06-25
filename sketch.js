@@ -220,7 +220,6 @@ function drawManagerSelector() {
     textSize(11);
     textAlign(CENTER);
     let displayName = managers[i].name.split('(')[0].trim();
-    if (isBoss) displayName = displayName;
     text(displayName, btnX + btnW/2, y + 20);
     textAlign(LEFT);
   }
@@ -285,13 +284,12 @@ function drawTaskBlock(title, tasks, x, y, accentColor) {
     let assignee = task.assignee ? task.assignee.name.split('(')[0].trim() : 'Неназначена';
     text(task.hours + 'ч | ' + task.deadline + ' | ' + assignee, x + 38, ty + 26);
     
-    // Кнопка удаления (ВСЕГДА ВИДНА)
+    // Кнопка удаления
     let delX = x + 308;
     let delY = ty + 2;
     let delW = 22;
     let delH = 22;
     
-    // Подсветка кнопки при наведении
     if (mouseX > delX && mouseX < delX + delW && mouseY > delY && mouseY < delY + delH) {
       fill('#c0392b');
     } else {
@@ -300,7 +298,6 @@ function drawTaskBlock(title, tasks, x, y, accentColor) {
     noStroke();
     rect(delX, delY, delW, delH, 4);
     
-    // Иконка удаления
     fill('#ffffff');
     textSize(14);
     textAlign(CENTER);
@@ -353,7 +350,6 @@ function drawCompletedBlock(tasks, x, y) {
     return;
   }
   
-  // Сортируем по дате выполнения (новые сверху)
   let sortedTasks = tasks.slice().sort((a, b) => {
     if (!a.completedDate) return 1;
     if (!b.completedDate) return -1;
@@ -372,7 +368,7 @@ function drawCompletedBlock(tasks, x, y) {
     textSize(14);
     text('✓', x + 15, ty + 10);
     
-    // Название задачи (зачёркнуто)
+    // Название задачи
     fill(colors.completed);
     textSize(12);
     textStyle(ITALIC);
@@ -520,7 +516,6 @@ function drawTeamDashboard() {
     let freeMonthly = max(0, 160 - monthlyHours);
     let loadPct = (weeklyHours / 40) * 100;
     let loadColor = loadPct > 100 ? colors.danger : (loadPct > 80 ? colors.warning : colors.ok);
-    let isBoss = m.name.includes('Руководитель');
     
     let activeCount = m.tasks.filter(t => t.status !== 'done').length;
     let completedCount = m.tasks.filter(t => t.status === 'done').length;
@@ -535,7 +530,7 @@ function drawTeamDashboard() {
     fill(colors.text);
     textSize(14);
     textStyle(BOLD);
-    text m.name, x + 10, y + 20);
+    text(m.name, x + 10, y + 20);
     textStyle(NORMAL);
     
     fill('#636e72');
