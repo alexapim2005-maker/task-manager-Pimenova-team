@@ -237,17 +237,30 @@ function updateAssigneeButtons() {
 }
 function setType(type) { newTaskType=type; var bs=document.getElementsByClassName('type-btn'); for(var i=0;i<bs.length;i++){bs[i].classList.remove('active');if(bs[i].classList.contains(type))bs[i].classList.add('active');} }
 function saveTaskFromForm() {
-  var t = document.getElementById('task-title').value.trim();
-  var h = parseInt(document.getElementById('task-hours').value);
-  var d = document.getElementById('task-deadline').value.trim();
-  var desc = document.getElementById('task-description').value.trim();
+  alert('Кнопка нажата!');
+  
+  var titleEl = document.getElementById('task-title');
+  var hoursEl = document.getElementById('task-hours');
+  var deadlineEl = document.getElementById('task-deadline');
+  var descEl = document.getElementById('task-description');
+  
+  if (!titleEl || !hoursEl || !deadlineEl) {
+    alert('Поля не найдены! titleEl=' + !!titleEl + ' hoursEl=' + !!hoursEl + ' deadlineEl=' + !!deadlineEl);
+    return;
+  }
+  
+  var t = titleEl.value.trim();
+  var h = parseInt(hoursEl.value);
+  var d = deadlineEl.value.trim();
+  var desc = descEl ? descEl.value.trim() : '';
+  
   if (t && h && d && newTaskAssignee) {
     newTaskAssignee.addTask(new Task(t, newTaskType, h, d, newTaskAssignee, desc));
-    document.getElementById('task-title').value = '';
-    document.getElementById('task-hours').value = '';
-    document.getElementById('task-deadline').value = '';
-    document.getElementById('task-description').value = '';
+    titleEl.value = ''; hoursEl.value = ''; deadlineEl.value = '';
+    if (descEl) descEl.value = '';
     hideForm();
+  } else {
+    alert('Не все поля: t=' + t + ' h=' + h + ' d=' + d + ' assignee=' + (newTaskAssignee ? newTaskAssignee.name : 'нет'));
   }
 }
 function showForm() { showAddForm=true; newTaskAssignee=currentManager; document.getElementById('add-form').classList.add('visible'); document.getElementById('overlay').classList.add('visible'); setType('weekly'); updateAssigneeButtons(); }
