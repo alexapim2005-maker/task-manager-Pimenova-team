@@ -53,15 +53,20 @@
             padding: 10px 20px; background: #d63031; color: #fff; border: none;
             border-radius: 6px; cursor: pointer; font-size: 14px; margin-left: 8px; font-family: Arial, sans-serif;
         }
-        #description-tooltip {
-            display: none; position: fixed; background: #2d3436; color: #fff;
-            padding: 10px 14px; border-radius: 8px; font-size: 12px;
-            max-width: 280px; z-index: 10000; pointer-events: none;
+        #save-btn-html {
+            position: absolute; top: 93px; left: 655px;
+            padding: 7px 20px; background: #0984e3; color: #fff; border: none;
+            border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: bold;
+            font-family: Arial, sans-serif; z-index: 10;
         }
+        #save-btn-html:hover { background: #0768b3; }
     </style>
 </head>
 <body>
     <div id="app-container">
+        <!-- Кнопка Сохранить в шапке (HTML) -->
+        <button id="save-btn-html" onclick="saveData()">💾 Сохранить</button>
+        
         <div id="overlay" onclick="hideForm()"></div>
         <div id="add-form">
             <h3>Новая задача</h3>
@@ -82,7 +87,6 @@
             <button class="save-btn" onclick="saveTaskFromForm()">💾 Сохранить</button>
             <button class="cancel-btn" onclick="hideForm()">✕ Отмена</button>
         </div>
-        <div id="description-tooltip"></div>
     </div>
     <script src="sketch.js"></script>
 </body>
