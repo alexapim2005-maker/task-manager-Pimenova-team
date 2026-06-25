@@ -347,10 +347,15 @@ function saveTaskFromForm() {
 function showForm() {
   showAddForm = true; newTaskAssignee = currentManager;
   document.getElementById('add-form').classList.add('visible');
+  document.getElementById('overlay').classList.add('visible');
   setType('weekly'); updateAssigneeButtons();
+  // Фокус на первое поле
+  setTimeout(function(){ document.getElementById('task-title').focus(); }, 100);
 }
 function hideForm() {
-  showAddForm = false; document.getElementById('add-form').classList.remove('visible');
+  showAddForm = false;
+  document.getElementById('add-form').classList.remove('visible');
+  document.getElementById('overlay').classList.remove('visible');
 }
 
 // === УВЕДОМЛЕНИЯ ===
