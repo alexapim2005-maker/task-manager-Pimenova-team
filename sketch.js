@@ -186,13 +186,11 @@ function drawPersonalView() {
   drawManagerSelector();
   
   if (currentManager) {
-    // Три блока задач (теперь по 180px высотой, чтобы освободить место)
-    drawTaskBlock('Еженедельные задачи', currentManager.getWeeklyTasks(), 30, 180, colors.weekly, 180);
-    drawTaskBlock('Ежемесячные задачи', currentManager.getMonthlyTasks(), 380, 180, colors.monthly, 180);
-    drawTaskBlock('Разовые задачи', currentManager.getOnetimeTasks(), 730, 180, colors.onetime, 180);
+    drawTaskBlock('Еженедельные задачи', currentManager.getWeeklyTasks(), 30, 180, colors.weekly);
+    drawTaskBlock('Ежемесячные задачи', currentManager.getMonthlyTasks(), 380, 180, colors.monthly);
+    drawTaskBlock('Разовые задачи', currentManager.getOnetimeTasks(), 730, 180, colors.onetime);
     
-    // Блок завершённых задач
-    drawCompletedBlock(currentManager.getCompletedTasks(), 30, 400);
+    drawCompletedBlock(currentManager.getCompletedTasks(), 30, 420);
     
     drawStats();
   }
@@ -228,7 +226,7 @@ function drawManagerSelector() {
   }
 }
 
-function drawTaskBlock(title, tasks, x, y, accentColor, blockHeight) {
+function drawTaskBlock(title, tasks, x, y, accentColor) {
   fill(accentColor);
   noStroke();
   rect(x, y, 340, 36, 8);
@@ -248,7 +246,7 @@ function drawTaskBlock(title, tasks, x, y, accentColor, blockHeight) {
   fill(colors.card);
   stroke('#e0e0e0');
   strokeWeight(1);
-  rect(x, y + 36, 340, blockHeight, 0, 0, 8, 8);
+  rect(x, y + 36, 340, 190, 0, 0, 8, 8);
   
   if (activeTasks.length === 0) {
     fill('#b2bec3');
@@ -258,18 +256,13 @@ function drawTaskBlock(title, tasks, x, y, accentColor, blockHeight) {
     return;
   }
   
-  let maxVisible = floor((blockHeight - 20) / 38);
-  
-  for (let i = 0; i < min(activeTasks.length, maxVisible); i++) {
+  for (let i = 0; i < min(activeTasks.length, 5); i++) {
     let task = activeTasks[i];
-    let ty = y + 50 + i * 38;
+    let ty = y + 50 + i * 36;
     
+    // Подсветка просроченных
     if (isTaskOverdue(task)) {
       fill('#fff5f5');
-      noStroke();
-      rect(x + 2, ty - 2, 336, 34, 4);
-    } else if (mouseX > x && mouseX < x + 340 && mouseY > ty && mouseY < ty + 35) {
-      fill('#f8f9fa');
       noStroke();
       rect(x + 2, ty - 2, 336, 34, 4);
     }
@@ -278,44 +271,59 @@ function drawTaskBlock(title, tasks, x, y, accentColor, blockHeight) {
     fill('#ffffff');
     stroke('#b2bec3');
     strokeWeight(2);
-    rect(x + 12, ty, 18, 18, 4);
+    rect(x + 12, ty + 2, 18, 18, 4);
     
+    // Название задачи
+    noStroke();
+    fill(isTaskOverdue(task) ? colors.danger : colors.text);
+    textSize(12);
+    text(task.title, x + 38, ty + 10);
+    
+    // Информация
+    fill('#636e72');
+    textSize(10);
+    let assignee = task.assignee ? task.assignee.name.split('(')[0].trim() : 'Неназначена';
+    text(task.hours + 'ч | ' + task.deadline + ' | ' + assignee, x + 38, ty + 26);
+    
+    // Кнопка удаления (ВСЕГДА ВИДНА)
+    let delX = x + 308;
+    let delY = ty + 2;
+    let delW = 22;
+    let delH = 22;
+    
+    // Подсветка кнопки при наведении
+    if (mouseX > delX && mouseX < delX + delW && mouseY > delY && mouseY < delY + delH) {
+      fill('#c0392b');
+    } else {
+      fill('#e74c3c');
+    }
+    noStroke();
+    rect(delX, delY, delW, delH, 4);
+    
+    // Иконка удаления
+    fill('#ffffff');
+    textSize(14);
+    textAlign(CENTER);
+    text('×', delX + delW/2, delY + 17);
+    textAlign(LEFT);
+    
+    // Индикатор просрочки
     if (isTaskOverdue(task)) {
       fill(colors.danger);
       noStroke();
-      circle(x + 325, ty + 9, 12);
+      circle(x + 325, ty + 8, 10);
       fill('#ffffff');
-      textSize(8);
+      textSize(7);
       textAlign(CENTER);
-      text('!', x + 325, ty + 13);
+      text('!', x + 325, ty + 12);
       textAlign(LEFT);
     }
-    
-    noStroke();
-    fill(isTaskOverdue(task) ? colors.danger : colors.text);
-    textSize(13);
-    text(task.title, x + 38, ty + 14);
-    
-    fill('#636e72');
-    textSize(11);
-    let assignee = task.assignee ? task.assignee.name.split('(')[0].trim() : 'Неназначена';
-    text(task.hours + 'ч | ' + task.deadline + ' | ' + assignee, x + 38, ty + 30);
-    
-    // Кнопка удаления (всегда видна)
-    fill('#ff7675');
-    noStroke();
-    rect(x + 300, ty + 8, 22, 18, 3);
-    fill('#ffffff');
-    textSize(12);
-    textAlign(CENTER);
-    text('🗑', x + 311, ty + 23);
-    textAlign(LEFT);
   }
 }
 
 function drawCompletedBlock(tasks, x, y) {
   let blockWidth = 1040;
-  let blockHeight = 140;
+  let blockHeight = 145;
   
   fill(colors.completed);
   noStroke();
@@ -352,64 +360,74 @@ function drawCompletedBlock(tasks, x, y) {
     return b.completedDate.localeCompare(a.completedDate);
   });
   
-  let maxVisible = floor((blockHeight - 20) / 30);
+  let maxVisible = floor((blockHeight - 20) / 32);
   
   for (let i = 0; i < min(sortedTasks.length, maxVisible); i++) {
     let task = sortedTasks[i];
-    let ty = y + 48 + i * 30;
+    let ty = y + 48 + i * 32;
     
     // Иконка выполненной задачи
     fill(colors.ok);
     noStroke();
     textSize(14);
-    text('✓', x + 15, ty + 12);
+    text('✓', x + 15, ty + 10);
     
     // Название задачи (зачёркнуто)
     fill(colors.completed);
-    textSize(13);
+    textSize(12);
     textStyle(ITALIC);
-    text(task.title, x + 35, ty + 12);
+    text(task.title, x + 35, ty + 10);
     textStyle(NORMAL);
     
     // Информация
     fill('#636e72');
-    textSize(10);
+    textSize(9);
     let assignee = task.assignee ? task.assignee.name.split('(')[0].trim() : '';
     let completedInfo = 'Выполнено: ' + (task.completedDate || 'неизвестно');
-    text(task.hours + 'ч | ' + completedInfo + ' | ' + assignee, x + 35, ty + 26);
+    text(task.hours + 'ч | ' + completedInfo + ' | ' + assignee, x + 35, ty + 24);
     
     // Кнопка восстановления
-    if (mouseX > x + 280 && mouseX < x + 320 && mouseY > ty - 2 && mouseY < ty + 20) {
+    let restoreX = x + 270;
+    let restoreY = ty + 2;
+    if (mouseX > restoreX && mouseX < restoreX + 40 && mouseY > restoreY && mouseY < restoreY + 22) {
+      fill('#74b9ff');
+    } else {
       fill('#dfe6e9');
-      noStroke();
-      rect(x + 280, ty - 2, 40, 22, 3);
-      fill(colors.text);
-      textSize(10);
-      textAlign(CENTER);
-      text('↩', x + 300, ty + 14);
-      textAlign(LEFT);
     }
-    
-    // Кнопка удаления
-    fill('#ff7675');
     noStroke();
-    rect(x + 330, ty + 2, 22, 16, 3);
-    fill('#ffffff');
+    rect(restoreX, restoreY, 40, 22, 3);
+    fill(colors.text);
     textSize(10);
     textAlign(CENTER);
-    text('🗑', x + 341, ty + 15);
+    text('↩', restoreX + 20, restoreY + 16);
+    textAlign(LEFT);
+    
+    // Кнопка удаления
+    let delX = x + 320;
+    let delY = ty + 2;
+    if (mouseX > delX && mouseX < delX + 28 && mouseY > delY && mouseY < delY + 22) {
+      fill('#c0392b');
+    } else {
+      fill('#e74c3c');
+    }
+    noStroke();
+    rect(delX, delY, 28, 22, 3);
+    fill('#ffffff');
+    textSize(12);
+    textAlign(CENTER);
+    text('×', delX + 14, delY + 17);
     textAlign(LEFT);
   }
 }
 
 function drawStats() {
   let x = 30;
-  let y = 580;
+  let y = 610;
   
   fill(colors.card);
   stroke('#e0e0e0');
   strokeWeight(1);
-  rect(x, y, 1040, 100, 8);
+  rect(x, y, 1040, 75, 8);
   
   fill(colors.text);
   textSize(16);
@@ -421,16 +439,16 @@ function drawStats() {
   let monthlyHours = currentManager.getMonthlyHours();
   
   let weekColor = weeklyHours > 40 ? colors.danger : (weeklyHours > 35 ? colors.warning : colors.ok);
-  drawProgressBar(x + 20, y + 42, 300, 'Неделя', weeklyHours, 40, weekColor);
+  drawProgressBar(x + 20, y + 40, 300, 'Неделя', weeklyHours, 40, weekColor);
   
   let monthColor = monthlyHours > 160 ? colors.danger : (monthlyHours > 140 ? colors.warning : colors.ok);
-  drawProgressBar(x + 370, y + 42, 300, 'Месяц', monthlyHours, 160, monthColor);
+  drawProgressBar(x + 370, y + 40, 300, 'Месяц', monthlyHours, 160, monthColor);
   
   let onetimeHours = currentManager.getOnetimeHours();
   fill(colors.text);
   textSize(13);
-  text('Разовые задачи: ' + onetimeHours + ' часов', x + 720, y + 42);
-  text('Свободно в неделе: ' + max(0, 40 - weeklyHours) + ' часов', x + 720, y + 65);
+  text('Разовые: ' + onetimeHours + 'ч', x + 720, y + 40);
+  text('Свободно в неделе: ' + max(0, 40 - weeklyHours) + 'ч', x + 720, y + 60);
 }
 
 function drawProgressBar(x, y, w, label, current, max, color) {
@@ -449,7 +467,7 @@ function drawProgressBar(x, y, w, label, current, max, color) {
 
 function drawAddButton() {
   let x = 850;
-  let y = 700;
+  let y = 705;
   
   fill(showAddForm ? colors.danger : colors.weekly);
   noStroke();
@@ -517,7 +535,7 @@ function drawTeamDashboard() {
     fill(colors.text);
     textSize(14);
     textStyle(BOLD);
-    text((isBoss ? '👑 ' : '') + m.name, x + 10, y + 20);
+    text m.name, x + 10, y + 20);
     textStyle(NORMAL);
     
     fill('#636e72');
@@ -877,7 +895,6 @@ class Task {
   
   complete() {
     this.status = 'done';
-    // Формируем дату выполнения
     let now = new Date();
     let day = String(now.getDate()).padStart(2, '0');
     let month = String(now.getMonth() + 1).padStart(2, '0');
@@ -1153,7 +1170,7 @@ function mousePressed() {
   }
   
   // Кнопка "Новая задача"
-  if (mouseX > 850 && mouseX < 1070 && mouseY > 700 && mouseY < 744) {
+  if (mouseX > 850 && mouseX < 1070 && mouseY > 705 && mouseY < 749) {
     if (showAddForm) {
       hideForm();
     } else {
@@ -1162,7 +1179,7 @@ function mousePressed() {
     return;
   }
   
-  // Обработка кликов по задачам и завершённым
+  // Обработка кликов по задачам
   if (currentManager && !showAddForm) {
     // Блоки активных задач
     let blocks = [
@@ -1175,27 +1192,28 @@ function mousePressed() {
       let activeTasks = block.tasks.filter(t => t.status !== 'done');
       for (let i = 0; i < activeTasks.length; i++) {
         let task = activeTasks[i];
-        let ty = block.y + i * 38;
+        let ty = block.y + 50 + i * 36;
         
         // Клик по чекбоксу — завершить задачу
         if (mouseX > block.x + 12 && mouseX < block.x + 30 && 
-            mouseY > ty && mouseY < ty + 18) {
+            mouseY > ty + 2 && mouseY < ty + 20) {
           task.complete();
           saveData();
           checkNotifications();
+          return;
         }
         
-        // Клик по корзине — удалить задачу
-        if (mouseX > block.x + 300 && mouseX < block.x + 322 && 
-            mouseY > ty + 8 && mouseY < ty + 26) {
+        // Клик по кнопке удаления (крестик)
+        if (mouseX > block.x + 308 && mouseX < block.x + 330 && 
+            mouseY > ty + 2 && mouseY < ty + 24) {
           currentManager.removeTask(task);
+          return;
         }
       }
     }
     
     // Блок завершённых задач
     let completedTasks = currentManager.getCompletedTasks();
-    let completedBlockY = 436;
     let sortedCompleted = completedTasks.slice().sort((a, b) => {
       if (!a.completedDate) return 1;
       if (!b.completedDate) return -1;
@@ -1204,17 +1222,20 @@ function mousePressed() {
     
     for (let i = 0; i < sortedCompleted.length; i++) {
       let task = sortedCompleted[i];
-      let ty = completedBlockY + i * 30;
+      let ty = 420 + 48 + i * 32;
       
       // Кнопка восстановления
-      if (mouseX > 310 && mouseX < 350 && mouseY > ty - 2 && mouseY < ty + 20) {
+      if (mouseX > 300 && mouseX < 340 && mouseY > ty + 2 && mouseY < ty + 24) {
         task.reopen();
         saveData();
+        checkNotifications();
+        return;
       }
       
       // Кнопка удаления
-      if (mouseX > 360 && mouseX < 382 && mouseY > ty + 2 && mouseY < ty + 18) {
+      if (mouseX > 350 && mouseX < 378 && mouseY > ty + 2 && mouseY < ty + 24) {
         currentManager.removeTask(task);
+        return;
       }
     }
   }
