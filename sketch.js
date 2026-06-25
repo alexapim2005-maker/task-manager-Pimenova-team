@@ -1,17 +1,17 @@
-let managers = [];
-let currentManager = null;
-let activeView = 'personal';
-let calendarManager = null;
-let notifications = [];
-let showNotifications = false;
-let showAddForm = false;
-let newTaskType = 'weekly';
-let newTaskAssignee = null;
-let hoveredTask = null;
-let hoveredTaskX = 0;
-let hoveredTaskY = 0;
+var managers = [];
+var currentManager = null;
+var activeView = 'personal';
+var calendarManager = null;
+var notifications = [];
+var showNotifications = false;
+var showAddForm = false;
+var newTaskType = 'weekly';
+var newTaskAssignee = null;
+var hoveredTask = null;
+var hoveredTaskX = 0;
+var hoveredTaskY = 0;
 
-let colors = {
+var colors = {
   bg: '#f5f6fa', card: '#ffffff', weekly: '#6c5ce7', monthly: '#e17055',
   onetime: '#00b894', done: '#b2bec3', completed: '#636e72', text: '#2d3436',
   danger: '#d63031', warning: '#fdcb6e', ok: '#00b894', accent: '#0984e3',
@@ -19,29 +19,32 @@ let colors = {
 };
 
 function setup() {
-  let canvas = createCanvas(1200, 850);
+  var canvas = createCanvas(1200, 850);
   canvas.parent('app-container');
   textFont('Arial');
   
-  let saved = localStorage.getItem('taskManagerData');
+  var saved = localStorage.getItem('taskManagerData');
   if (saved) {
     try {
-      let data = JSON.parse(saved);
+      var data = JSON.parse(saved);
       if (data && data.managers && data.managers.length > 0) {
         managers = [];
-        let map = {};
-        for (let m of data.managers) { 
-          let mgr = new Manager(m.name); 
-          map[m.name] = mgr; 
-          managers.push(mgr); 
+        var map = {};
+        for (var i = 0; i < data.managers.length; i++) {
+          var m = data.managers[i];
+          var mgr = new Manager(m.name);
+          map[m.name] = mgr;
+          managers.push(mgr);
         }
-        for (let m of data.managers) {
-          let mgr = map[m.name];
+        for (var i = 0; i < data.managers.length; i++) {
+          var m = data.managers[i];
+          var mgr = map[m.name];
           if (m.tasks) {
-            for (let t of m.tasks) {
+            for (var j = 0; j < m.tasks.length; j++) {
+              var t = m.tasks[j];
               if (t && t.title) {
-                let assignee = t.assigneeName ? map[t.assigneeName] : mgr;
-                let task = new Task(t.title, t.type||'weekly', t.hours||1, t.deadline||'ПН', assignee, t.description||'');
+                var assignee = t.assigneeName ? map[t.assigneeName] : mgr;
+                var task = new Task(t.title, t.type||'weekly', t.hours||1, t.deadline||'ПН', assignee, t.description||'');
                 task.status = t.status || 'todo';
                 task.completedDate = t.completedDate || null;
                 mgr.tasks.push(task);
@@ -55,9 +58,9 @@ function setup() {
   
   if (managers.length === 0) {
     managers = [];
-    let a = new Manager('Александра Пименова (Руководитель)');
-    let v = new Manager('Вера Гусева (Менеджер)');
-    let va = new Manager('Варвара Андреева (Менеджер)');
+    var a = new Manager('Александра Пименова (Руководитель)');
+    var v = new Manager('Вера Гусева (Менеджер)');
+    var va = new Manager('Варвара Андреева (Менеджер)');
     managers.push(a, v, va);
     a.addTask(new Task('Стратегическое планирование', 'weekly', 4, 'ПН', a, 'Определить цели на квартал'));
     a.addTask(new Task('Совещание с командой', 'weekly', 2, 'СР', a, 'Обсудить результаты'));
@@ -89,7 +92,7 @@ function draw() {
 }
 
 function updateTooltip() {
-  let t = document.getElementById('description-tooltip');
+  var t = document.getElementById('description-tooltip');
   if (hoveredTask && hoveredTask.description) {
     t.style.display = 'block';
     t.style.left = (hoveredTaskX+15)+'px';
@@ -130,8 +133,8 @@ function drawNotificationBell() {
 }
 
 function drawNotificationsPanel() {
-  let x = 900;
-  let y = 55;
+  var x = 900;
+  var y = 55;
   fill('#fff');
   stroke('#636e72');
   strokeWeight(2);
@@ -146,7 +149,7 @@ function drawNotificationsPanel() {
     textSize(12);
     text('Нет уведомлений', x+15, y+55);
   } else {
-    for (let i = 0; i < min(notifications.length, 7); i++) {
+    for (var i = 0; i < Math.min(notifications.length, 7); i++) {
       fill(notifications[i].type==='overdue'?colors.danger:colors.warning);
       textSize(11);
       text(notifications[i].message, x+15, y+55+i*22);
@@ -163,12 +166,13 @@ function drawNotificationsPanel() {
 }
 
 function drawViewTabs() {
-  let tabs = [
+  var tabs = [
     { id: 'personal', label: '👤 Мои задачи', x: 30 },
     { id: 'team', label: '👥 Дашборд', x: 175 },
     { id: 'calendar', label: '📅 Календарь', x: 320 }
   ];
-  for (let t of tabs) {
+  for (var i = 0; i < tabs.length; i++) {
+    var t = tabs[i];
     fill(activeView === t.id ? colors.accent : '#dfe6e9');
     noStroke();
     rect(t.x, 88, 140, 32, 7);
@@ -200,8 +204,8 @@ function drawPersonalView() {
   fill('#636e72');
   textSize(13);
   text('Сотрудник:', 30, 150);
-  for (let i = 0; i < managers.length; i++) {
-    let bx = 120 + i * 180;
+  for (var i = 0; i < managers.length; i++) {
+    var bx = 120 + i * 180;
     fill(managers[i] === currentManager ? colors.weekly : '#dfe6e9');
     noStroke();
     rect(bx, 136, 165, 28, 5);
@@ -239,7 +243,7 @@ function drawBlock(title, tasks, x, y, color) {
   stroke('#e0e0e0');
   strokeWeight(1);
   rect(x, y+34, 340, 185, 0, 0, 7, 7);
-  let active = tasks.filter(t => t.status !== 'done');
+  var active = tasks.filter(function(t) { return t.status !== 'done'; });
   if (active.length === 0) {
     fill('#b2bec3');
     noStroke();
@@ -247,9 +251,9 @@ function drawBlock(title, tasks, x, y, color) {
     text('Нет задач', x+12, y+60);
     return;
   }
-  for (let i = 0; i < min(active.length, 5); i++) {
-    let t = active[i];
-    let ty = y + 46 + i * 34;
+  for (var i = 0; i < Math.min(active.length, 5); i++) {
+    var t = active[i];
+    var ty = y + 46 + i * 34;
     if (mouseX > x+32 && mouseX < x+305 && mouseY > ty && mouseY < ty+32 && t.description) {
       hoveredTask = t;
       hoveredTaskX = mouseX;
@@ -275,7 +279,7 @@ function drawBlock(title, tasks, x, y, color) {
     text(t.title, x+44, ty+13);
     fill('#636e72');
     textSize(9);
-    let an = t.assignee ? t.assignee.name.split('(')[0].trim() : '';
+    var an = t.assignee ? t.assignee.name.split('(')[0].trim() : '';
     text(t.hours + 'ч | ' + t.deadline + ' | ' + an, x+44, ty+27);
     fill('#e74c3c');
     noStroke();
@@ -307,9 +311,9 @@ function drawCompletedBlock(tasks, x, y) {
     text('Нет завершённых задач', x+12, y+60);
     return;
   }
-  for (let i = 0; i < min(tasks.length, 4); i++) {
-    let t = tasks[i];
-    let ty = y + 44 + i * 30;
+  for (var i = 0; i < Math.min(tasks.length, 4); i++) {
+    var t = tasks[i];
+    var ty = y + 44 + i * 30;
     if (mouseX > x+30 && mouseX < x+255 && mouseY > ty && mouseY < ty+28 && t.description) {
       hoveredTask = t;
       hoveredTaskX = mouseX;
@@ -326,7 +330,7 @@ function drawCompletedBlock(tasks, x, y) {
     textStyle(NORMAL);
     fill('#636e72');
     textSize(9);
-    let an = t.assignee ? t.assignee.name.split('(')[0].trim() : '';
+    var an = t.assignee ? t.assignee.name.split('(')[0].trim() : '';
     text(t.hours + 'ч | Вып: ' + (t.completedDate||'?') + ' | ' + an, x+30, ty+25);
     fill('#dfe6e9');
     noStroke();
@@ -348,7 +352,7 @@ function drawCompletedBlock(tasks, x, y) {
 }
 
 function drawStats() {
-  let y = 600;
+  var y = 600;
   fill('#fff');
   stroke('#e0e0e0');
   rect(30, y, 1040, 65, 7);
@@ -357,33 +361,33 @@ function drawStats() {
   textStyle(BOLD);
   text('📊 Нагрузка: ' + currentManager.name, 48, y+25);
   textStyle(NORMAL);
-  let wh = currentManager.getWeeklyHours();
-  let mh = currentManager.getMonthlyHours();
+  var wh = currentManager.getWeeklyHours();
+  var mh = currentManager.getMonthlyHours();
   fill('#636e72');
   textSize(11);
   text('Неделя: ' + wh + ' / 40ч', 48, y+45);
   fill('#dfe6e9');
   noStroke();
   rect(150, y+35, 200, 14, 7);
-  let wc = wh > 40 ? colors.danger : wh > 35 ? colors.warning : colors.ok;
+  var wc = wh > 40 ? colors.danger : wh > 35 ? colors.warning : colors.ok;
   fill(wc);
-  rect(150, y+35, 200 * min(wh/40, 1), 14, 7);
+  rect(150, y+35, 200 * Math.min(wh/40, 1), 14, 7);
   fill('#636e72');
   textSize(11);
   text('Месяц: ' + mh + ' / 160ч', 380, y+45);
   fill('#dfe6e9');
   noStroke();
   rect(480, y+35, 200, 14, 7);
-  let mc = mh > 160 ? colors.danger : mh > 140 ? colors.warning : colors.ok;
+  var mc = mh > 160 ? colors.danger : mh > 140 ? colors.warning : colors.ok;
   fill(mc);
-  rect(480, y+35, 200 * min(mh/160, 1), 14, 7);
+  rect(480, y+35, 200 * Math.min(mh/160, 1), 14, 7);
   fill(colors.text);
   textSize(12);
-  text('Разовые: ' + currentManager.getOnetimeHours() + 'ч | Свободно: ' + max(0, 40-wh) + 'ч', 720, y+45);
+  text('Разовые: ' + currentManager.getOnetimeHours() + 'ч | Свободно: ' + Math.max(0, 40-wh) + 'ч', 720, y+45);
 }
 
 function drawTeamView() {
-  let y = 160;
+  var y = 160;
   fill(colors.text);
   textSize(20);
   textStyle(BOLD);
@@ -396,18 +400,19 @@ function drawTeamView() {
   fill('#fff');
   textSize(12);
   textStyle(BOLD);
-  let hx = 45;
-  let headers = ['Сотрудник', 'Активные', 'Завершено', 'Занято нед', 'Своб нед', 'Занято мес', 'Загрузка'];
-  for (let h of headers) {
-    text(h, hx, y+21);
+  var hx = 45;
+  var headers = ['Сотрудник', 'Активные', 'Завершено', 'Занято нед', 'Своб нед', 'Занято мес', 'Загрузка'];
+  for (var i = 0; i < headers.length; i++) {
+    text(headers[i], hx, y+21);
     hx += 150;
   }
   textStyle(NORMAL);
   y += 36;
-  for (let m of managers) {
-    let wh = m.getWeeklyHours();
-    let mh = m.getMonthlyHours();
-    let pct = (wh/40)*100;
+  for (var i = 0; i < managers.length; i++) {
+    var m = managers[i];
+    var wh = m.getWeeklyHours();
+    var mh = m.getMonthlyHours();
+    var pct = (wh/40)*100;
     fill('#fff');
     stroke('#e0e0e0');
     rect(30, y, 1050, 46);
@@ -419,22 +424,22 @@ function drawTeamView() {
     textStyle(NORMAL);
     fill('#636e72');
     textSize(11);
-    let act = m.tasks.filter(function(t){ return t.status !== 'done'; }).length;
-    let comp = m.tasks.filter(function(t){ return t.status === 'done'; }).length;
+    var act = m.tasks.filter(function(t) { return t.status !== 'done'; }).length;
+    var comp = m.tasks.filter(function(t) { return t.status === 'done'; }).length;
     text(act + ' | ' + comp, 45, y+36);
     textAlign(CENTER);
     fill(wh>40?colors.danger:colors.text);
     text(wh.toFixed(1)+'ч', 345, y+28);
-    fill(max(0,40-wh)>0?colors.ok:'#636e72');
-    text(max(0,40-wh).toFixed(1)+'ч', 495, y+28);
+    fill(Math.max(0,40-wh)>0?colors.ok:'#636e72');
+    text(Math.max(0,40-wh).toFixed(1)+'ч', 495, y+28);
     fill(mh>160?colors.danger:colors.text);
     text(mh.toFixed(1)+'ч', 645, y+28);
     textAlign(LEFT);
     fill('#dfe6e9');
     rect(750, y+14, 200, 12, 6);
-    let lc = pct>100?colors.danger:pct>80?colors.warning:colors.ok;
+    var lc = pct>100?colors.danger:pct>80?colors.warning:colors.ok;
     fill(lc);
-    rect(750, y+14, 200*min(pct/100,1.5), 12, 6);
+    rect(750, y+14, 200*Math.min(pct/100,1.5), 12, 6);
     fill(colors.text);
     textSize(10);
     textAlign(CENTER);
@@ -445,14 +450,14 @@ function drawTeamView() {
 }
 
 function drawCalendarView() {
-  let y = 160;
+  var y = 160;
   fill(colors.text);
   textSize(20);
   textStyle(BOLD);
   text('📅 Календарь загрузки', 30, y);
   textStyle(NORMAL);
-  for (let i = 0; i < managers.length; i++) {
-    let bx = 280 + i * 200;
+  for (var i = 0; i < managers.length; i++) {
+    var bx = 280 + i * 200;
     fill(calendarManager === managers[i] ? colors.accent : '#dfe6e9');
     noStroke();
     rect(bx, y-10, 180, 26, 4);
@@ -463,8 +468,8 @@ function drawCalendarView() {
     textAlign(LEFT);
   }
   y += 35;
-  let days = ['ПН', 'ВТ', 'СР', 'ЧТ', 'ПТ', 'СБ', 'ВС'];
-  for (let d = 0; d < 7; d++) {
+  var days = ['ПН', 'ВТ', 'СР', 'ЧТ', 'ПТ', 'СБ', 'ВС'];
+  for (var d = 0; d < 7; d++) {
     fill(colors.accent);
     noStroke();
     rect(30+d*155+d*5, y, 155, 26, 4);
@@ -477,8 +482,8 @@ function drawCalendarView() {
     textStyle(NORMAL);
   }
   y += 30;
-  for (let w = 0; w < 4; w++) {
-    for (let d = 0; d < 7; d++) {
+  for (var w = 0; w < 4; w++) {
+    for (var d = 0; d < 7; d++) {
       fill('#fff');
       stroke('#e0e0e0');
       rect(30+d*160, y+w*135, 155, 130, 5);
@@ -596,18 +601,27 @@ function saveTaskFromForm() {
   var deadlineInput = document.getElementById('task-deadline');
   var descInput = document.getElementById('task-description');
   
-  var t = titleInput ? titleInput.value.trim() : '';
-  var h = hoursInput ? parseInt(hoursInput.value) : 0;
-  var d = deadlineInput ? deadlineInput.value.trim() : '';
+  if (!titleInput || !hoursInput || !deadlineInput) {
+    console.log('Поля не найдены!');
+    return;
+  }
+  
+  var t = titleInput.value.trim();
+  var h = parseInt(hoursInput.value);
+  var d = deadlineInput.value.trim();
   var desc = descInput ? descInput.value.trim() : '';
   
   if (t && h && d && newTaskAssignee) {
-    newTaskAssignee.addTask(new Task(t, newTaskType, h, d, newTaskAssignee, desc));
+    var task = new Task(t, newTaskType, h, d, newTaskAssignee, desc);
+    newTaskAssignee.addTask(task);
     titleInput.value = '';
     hoursInput.value = '';
     deadlineInput.value = '';
     if (descInput) descInput.value = '';
     hideForm();
+    console.log('Задача сохранена!');
+  } else {
+    console.log('Не все поля заполнены:', t, h, d, newTaskAssignee);
   }
 }
 
@@ -642,6 +656,7 @@ function checkNotifications() {
 
 // ====== ДАННЫЕ ======
 function saveData() {
+  console.log('saveData вызвана!');
   var data = managers.map(function(m) {
     return {
       name: m.name,
@@ -660,6 +675,7 @@ function saveData() {
     };
   });
   localStorage.setItem('taskManagerData', JSON.stringify(data));
+  console.log('Данные сохранены в localStorage!');
 }
 
 // ====== ЭКСПОРТ ======
