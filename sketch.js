@@ -139,6 +139,9 @@ function drawViewTabs() {
   }
   fill(colors.ok); noStroke(); rect(480, 88, 130, 32, 7);
   fill('#fff'); textSize(13); textAlign(CENTER); text('📥 Экспорт', 545, 109); textAlign(LEFT);
+  // Кнопка сохранить
+  fill('#0984e3'); noStroke(); rect(620, 88, 130, 32, 7);
+  fill('#fff'); textSize(13); textAlign(CENTER); text('💾 Сохранить', 685, 109); textAlign(LEFT);
 }
 
 function drawPersonalView() {
@@ -294,7 +297,6 @@ function updateAssigneeButtons() {
 }
 function setType(type) { newTaskType=type; var bs=document.getElementsByClassName('type-btn'); for(var i=0;i<bs.length;i++){bs[i].classList.remove('active');if(bs[i].classList.contains(type))bs[i].classList.add('active');} }
 
-// Кнопка сохранения в форме — теперь через HTML onclick
 function saveTaskFromForm() {
   var titleInput = document.getElementById('task-title');
   var hoursInput = document.getElementById('task-hours');
@@ -345,21 +347,18 @@ function exportToXLS() {
 
 // ====== КЛИКИ ======
 function mousePressed() {
-  alert('X=' + Math.round(mouseX) + ' Y=' + Math.round(mouseY));
-}
-  // Уведомления
+  if (mouseX > 1095 && mouseX < 1130 && mouseY > 10 && mouseY < 45) { showNotifications = !showNotifications; return; }
   if (showNotifications) {
     if (mouseX < 900 || mouseX > 1160 || mouseY < 55 || mouseY > 275) showNotifications = false;
     if (mouseX > 915 && mouseX < 1145 && mouseY > 235 && mouseY < 260) { notifications = []; showNotifications = false; }
     return;
   }
-  // Вкладки
   if (mouseY > 88 && mouseY < 120) {
     if (mouseX > 30 && mouseX < 170) { activeView = 'personal'; hideForm(); return; }
     if (mouseX > 175 && mouseX < 315) { activeView = 'team'; hideForm(); return; }
     if (mouseX > 320 && mouseX < 460) { activeView = 'calendar'; hideForm(); return; }
     if (mouseX > 480 && mouseX < 610) { exportToXLS(); return; }
-    // Кнопка "Сохранить" в шапке
+    if (mouseX > 620 && mouseX < 750) { saveData(); return; }
   }
   if (activeView === 'calendar') {
     for (var i = 0; i < managers.length; i++) {
@@ -368,36 +367,25 @@ function mousePressed() {
     return;
   }
   if (activeView === 'team') return;
-  
-  // Выбор менеджера
   for (var i = 0; i < managers.length; i++) {
     if (mouseX > 120+i*180 && mouseX < 285+i*180 && mouseY > 136 && mouseY < 164) { currentManager = managers[i]; hideForm(); }
   }
-  
-  // Кнопка "+ Новая задача"
   if (mouseX > 850 && mouseX < 1050 && mouseY > 710 && mouseY < 750) { showForm(); return; }
-  
-  // Задачи
   if (currentManager && !showAddForm) {
-    var blocks = [
-      { tasks: currentManager.getWeeklyTasks(), x: 30 },
-      { tasks: currentManager.getMonthlyTasks(), x: 380 },
-      { tasks: currentManager.getOnetimeTasks(), x: 730 }
-    ];
-    for (var b = 0; b < blocks.length; b++) {
-      var block = blocks[b];
-      var active = block.tasks.filter(function(t) { return t.status !== 'done'; });
-      for (var j = 0; j < Math.min(active.length, 5); j++) {
-        var ty = 226 + j * 34;
-        if (mouseX > block.x+308 && mouseX < block.x+330 && mouseY > ty+6 && mouseY < ty+26) { currentManager.removeTask(active[j]); return; }
-        if (mouseX > block.x+10 && mouseX < block.x+26 && mouseY > ty+6 && mouseY < ty+22) { active[j].complete(); saveData(); checkNotifications(); return; }
+    var blocks = [{tasks:currentManager.getWeeklyTasks(),x:30},{tasks:currentManager.getMonthlyTasks(),x:380},{tasks:currentManager.getOnetimeTasks(),x:730}];
+    for (var b=0;b<blocks.length;b++) {
+      var block=blocks[b]; var active=block.tasks.filter(function(t){return t.status!=='done';});
+      for (var j=0;j<Math.min(active.length,5);j++) {
+        var ty=226+j*34;
+        if (mouseX>block.x+308&&mouseX<block.x+330&&mouseY>ty+6&&mouseY<ty+26){currentManager.removeTask(active[j]);return;}
+        if (mouseX>block.x+10&&mouseX<block.x+26&&mouseY>ty+6&&mouseY<ty+22){active[j].complete();saveData();checkNotifications();return;}
       }
     }
-    var completed = currentManager.getCompletedTasks();
-    for (var k = 0; k < Math.min(completed.length, 4); k++) {
-      var t = completed[k], ty = 464 + k * 30;
-      if (mouseX > 335 && mouseX < 360 && mouseY > ty+3 && mouseY < ty+23) { currentManager.removeTask(t); return; }
-      if (mouseX > 290 && mouseX < 325 && mouseY > ty+3 && mouseY < ty+23) { t.reopen(); saveData(); checkNotifications(); return; }
+    var completed=currentManager.getCompletedTasks();
+    for (var k=0;k<Math.min(completed.length,4);k++) {
+      var t=completed[k],ty=464+k*30;
+      if (mouseX>335&&mouseX<360&&mouseY>ty+3&&mouseY<ty+23){currentManager.removeTask(t);return;}
+      if (mouseX>290&&mouseX<325&&mouseY>ty+3&&mouseY<ty+23){t.reopen();saveData();checkNotifications();return;}
     }
   }
 }
