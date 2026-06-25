@@ -7,26 +7,82 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
     <style>
         body {
-            margin: 0;
-            padding: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            background: #f5f6fa;
-            font-family: Arial, sans-serif;
+            margin: 0; padding: 0; display: flex; justify-content: center; align-items: center;
+            min-height: 100vh; background: #f5f6fa; font-family: Arial, sans-serif;
         }
-        #app-container {
-            position: relative;
+        #app-container { position: relative; }
+        canvas { border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
+        
+        #add-form {
+            display: none; position: absolute; top: 280px; left: 230px;
+            background: #fff; border: 2px solid #636e72; border-radius: 12px;
+            padding: 20px; width: 740px; z-index: 10; box-shadow: 0 8px 30px rgba(0,0,0,0.3);
         }
-        canvas {
-            border-radius: 8px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        #add-form.visible { display: block; }
+        #add-form h3 { margin: 0 0 12px 0; color: #2d3436; }
+        #add-form input, #add-form textarea {
+            padding: 8px 10px; border: 1px solid #b2bec3; border-radius: 4px;
+            font-size: 13px; font-family: Arial, sans-serif; margin-right: 8px; margin-bottom: 8px;
+        }
+        #add-form input[type="text"] { width: 220px; }
+        #add-form input[type="number"] { width: 60px; }
+        #add-form textarea { width: 350px; height: 45px; resize: vertical; vertical-align: top; }
+        
+        #add-form .type-btn {
+            padding: 7px 14px; border: none; border-radius: 4px; cursor: pointer;
+            font-size: 12px; margin-right: 4px; background: #dfe6e9; color: #2d3436; font-family: Arial, sans-serif;
+        }
+        #add-form .type-btn.active { color: #fff; }
+        #add-form .type-btn.weekly.active { background: #6c5ce7; }
+        #add-form .type-btn.monthly.active { background: #e17055; }
+        #add-form .type-btn.onetime.active { background: #00b894; }
+        
+        #add-form .assignee-btn {
+            padding: 7px 12px; border: none; border-radius: 4px; cursor: pointer;
+            font-size: 12px; margin-right: 4px; background: #dfe6e9; color: #2d3436; font-family: Arial, sans-serif;
+        }
+        #add-form .assignee-btn.active { background: #0984e3; color: #fff; }
+        
+        #add-form .save-btn {
+            padding: 10px 28px; background: #00b894; color: #fff; border: none;
+            border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: bold; font-family: Arial, sans-serif;
+        }
+        #add-form .cancel-btn {
+            padding: 10px 20px; background: #d63031; color: #fff; border: none;
+            border-radius: 6px; cursor: pointer; font-size: 14px; margin-left: 8px; font-family: Arial, sans-serif;
+        }
+        
+        #description-tooltip {
+            display: none; position: absolute; background: #2d3436; color: #fff;
+            padding: 10px 14px; border-radius: 8px; font-size: 12px;
+            max-width: 280px; z-index: 20; pointer-events: none;
         }
     </style>
 </head>
 <body>
-    <div id="app-container"></div>
+    <div id="app-container">
+        <!-- Форма добавления -->
+        <div id="add-form">
+            <h3>Новая задача</h3>
+            <input type="text" id="task-title" placeholder="Название задачи...">
+            <div style="display:inline-block;">
+                <button class="type-btn weekly active" onclick="setType('weekly')">Еженед.</button>
+                <button class="type-btn monthly" onclick="setType('monthly')">Ежемес.</button>
+                <button class="type-btn onetime" onclick="setType('onetime')">Разов.</button>
+            </div>
+            <input type="number" id="task-hours" placeholder="Часы" min="1">
+            <input type="text" id="task-deadline" placeholder="Дедлайн">
+            <br>
+            <textarea id="task-description" placeholder="Описание задачи и вводные..."></textarea>
+            <br><br>
+            <span style="color:#636e72; font-size:12px;">Ответственный:</span>
+            <div id="assignee-btns" style="display:inline-block;"></div>
+            <br><br>
+            <button class="save-btn" onclick="saveTaskFromForm()">💾 Сохранить</button>
+            <button class="cancel-btn" onclick="hideForm()">✕ Отмена</button>
+        </div>
+        <div id="description-tooltip"></div>
+    </div>
     <script src="sketch.js"></script>
 </body>
 </html>
