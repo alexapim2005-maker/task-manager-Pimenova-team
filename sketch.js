@@ -7,15 +7,11 @@ var showNotifications = false;
 var showAddForm = false;
 var newTaskType = 'weekly';
 var newTaskAssignee = null;
-var hoveredTask = null;
-var hoveredTaskX = 0;
-var hoveredTaskY = 0;
 
 var colors = {
   bg: '#f5f6fa', card: '#ffffff', weekly: '#6c5ce7', monthly: '#e17055',
   onetime: '#00b894', done: '#b2bec3', completed: '#636e72', text: '#2d3436',
-  danger: '#d63031', warning: '#fdcb6e', ok: '#00b894', accent: '#0984e3',
-  lightWeekly: '#a29bfe', lightMonthly: '#fab1a0', lightOnetime: '#55efc4'
+  danger: '#d63031', warning: '#fdcb6e', ok: '#00b894', accent: '#0984e3'
 };
 
 function setup() {
@@ -23,53 +19,17 @@ function setup() {
   canvas.parent('app-container');
   textFont('Arial');
   
-  var saved = localStorage.getItem('taskManagerData');
-  if (saved) {
-    try {
-      var data = JSON.parse(saved);
-      if (data && data.managers && data.managers.length > 0) {
-        managers = [];
-        var map = {};
-        for (var i = 0; i < data.managers.length; i++) {
-          var m = data.managers[i];
-          var mgr = new Manager(m.name);
-          map[m.name] = mgr;
-          managers.push(mgr);
-        }
-        for (var i = 0; i < data.managers.length; i++) {
-          var m = data.managers[i];
-          var mgr = map[m.name];
-          if (m.tasks) {
-            for (var j = 0; j < m.tasks.length; j++) {
-              var t = m.tasks[j];
-              if (t && t.title) {
-                var assignee = t.assigneeName ? map[t.assigneeName] : mgr;
-                var task = new Task(t.title, t.type||'weekly', t.hours||1, t.deadline||'ПН', assignee, t.description||'');
-                task.status = t.status || 'todo';
-                task.completedDate = t.completedDate || null;
-                mgr.tasks.push(task);
-              }
-            }
-          }
-        }
-      }
-    } catch(e) {}
-  }
-  
-  if (managers.length === 0) {
-    managers = [];
-    var a = new Manager('Александра Пименова (Руководитель)');
-    var v = new Manager('Вера Гусева (Менеджер)');
-    var va = new Manager('Варвара Андреева (Менеджер)');
-    managers.push(a, v, va);
-    a.addTask(new Task('Стратегическое планирование', 'weekly', 4, 'ПН', a, 'Определить цели на квартал'));
-    a.addTask(new Task('Совещание с командой', 'weekly', 2, 'СР', a, 'Обсудить результаты'));
-    v.addTask(new Task('Отчёт по продажам', 'weekly', 3, 'ПН', v, 'Собрать данные из CRM'));
-    v.addTask(new Task('Презентация для клиента', 'onetime', 6, '28.06.2026', v, 'Для встречи с Петровым'));
-    va.addTask(new Task('Анализ рынка', 'weekly', 4, 'ПН', va, 'Мониторинг конкурентов'));
-    va.addTask(new Task('Обновление базы', 'onetime', 8, '27.06.2026', va, 'Перенести данные в CRM'));
-    saveData();
-  }
+  managers = [];
+  var a = new Manager('Александра Пименова (Руководитель)');
+  var v = new Manager('Вера Гусева (Менеджер)');
+  var va = new Manager('Варвара Андреева (Менеджер)');
+  managers.push(a, v, va);
+  a.addTask(new Task('Стратегическое планирование', 'weekly', 4, 'ПН', a, 'Определить цели на квартал'));
+  a.addTask(new Task('Совещание с командой', 'weekly', 2, 'СР', a, 'Обсудить результаты'));
+  v.addTask(new Task('Отчёт по продажам', 'weekly', 3, 'ПН', v, 'Собрать данные из CRM'));
+  v.addTask(new Task('Презентация для клиента', 'onetime', 6, '28.06.2026', v, 'Для встречи с Петровым'));
+  va.addTask(new Task('Анализ рынка', 'weekly', 4, 'ПН', va, 'Мониторинг конкурентов'));
+  va.addTask(new Task('Обновление базы', 'onetime', 8, '27.06.2026', va, 'Перенести данные в CRM'));
   
   currentManager = managers[0];
   calendarManager = managers[0];
@@ -80,27 +40,13 @@ function setup() {
 
 function draw() {
   background(colors.bg);
-  hoveredTask = null;
   drawHeader();
   drawViewTabs();
   drawNotificationBell();
-  if (showNotifications) { drawNotificationsPanel(); }
-  if (activeView === 'personal') { drawPersonalView(); }
-  else if (activeView === 'team') { drawTeamView(); }
-  else if (activeView === 'calendar') { drawCalendarView(); }
-  updateTooltip();
-}
-
-function updateTooltip() {
-  var t = document.getElementById('description-tooltip');
-  if (hoveredTask && hoveredTask.description) {
-    t.style.display = 'block';
-    t.style.left = (hoveredTaskX+15)+'px';
-    t.style.top = (hoveredTaskY-10)+'px';
-    t.textContent = hoveredTask.description;
-  } else {
-    t.style.display = 'none';
-  }
+  if (showNotifications) drawNotificationsPanel();
+  if (activeView === 'personal') drawPersonalView();
+  else if (activeView === 'team') drawTeamView();
+  else if (activeView === 'calendar') drawCalendarView();
 }
 
 function drawHeader() {
@@ -139,9 +85,6 @@ function drawViewTabs() {
   }
   fill(colors.ok); noStroke(); rect(480, 88, 130, 32, 7);
   fill('#fff'); textSize(13); textAlign(CENTER); text('📥 Экспорт', 545, 109); textAlign(LEFT);
-  // Кнопка сохранить
-  fill('#0984e3'); noStroke(); rect(620, 88, 130, 32, 7);
-  fill('#fff'); textSize(13); textAlign(CENTER); text('💾 Сохранить', 685, 109); textAlign(LEFT);
 }
 
 function drawPersonalView() {
@@ -168,9 +111,7 @@ function drawBlock(title, tasks, x, y, color) {
   if (active.length === 0) { fill('#b2bec3'); noStroke(); textSize(12); text('Нет задач', x+12, y+60); return; }
   for (var i = 0; i < Math.min(active.length, 5); i++) {
     var t = active[i]; var ty = y + 46 + i * 34;
-    if (mouseX > x+32 && mouseX < x+305 && mouseY > ty && mouseY < ty+32 && t.description) { hoveredTask = t; hoveredTaskX = mouseX; hoveredTaskY = mouseY; }
     fill('#fff'); stroke('#b2bec3'); strokeWeight(2); rect(x+10, ty+6, 16, 16, 3); noStroke();
-    if (t.description) { fill('#74b9ff'); noStroke(); circle(x+32, ty+22, 9); fill('#fff'); textSize(7); textAlign(CENTER); text('i', x+32, ty+25); textAlign(LEFT); }
     fill(colors.text); textSize(12); text(t.title, x+44, ty+13);
     fill('#636e72'); textSize(9);
     var an = t.assignee ? t.assignee.name.split('(')[0].trim() : '';
@@ -187,7 +128,6 @@ function drawCompletedBlock(tasks, x, y) {
   if (tasks.length === 0) { fill('#b2bec3'); noStroke(); textSize(12); text('Нет завершённых задач', x+12, y+60); return; }
   for (var i = 0; i < Math.min(tasks.length, 4); i++) {
     var t = tasks[i]; var ty = y + 44 + i * 30;
-    if (mouseX > x+30 && mouseX < x+255 && mouseY > ty && mouseY < ty+28 && t.description) { hoveredTask = t; hoveredTaskX = mouseX; hoveredTaskY = mouseY; }
     fill('#00b894'); noStroke(); textSize(13); text('✓', x+12, ty+12);
     fill(colors.completed); textSize(12); textStyle(ITALIC); text(t.title, x+30, ty+12); textStyle(NORMAL);
     fill('#636e72'); textSize(9);
@@ -261,8 +201,8 @@ function drawCalendarView() {
 
 // ====== КЛАССЫ ======
 function Manager(name) { this.name = name; this.tasks = []; }
-Manager.prototype.addTask = function(t) { this.tasks.push(t); saveData(); checkNotifications(); };
-Manager.prototype.removeTask = function(t) { var i = this.tasks.indexOf(t); if(i>-1){this.tasks.splice(i,1); saveData(); checkNotifications();} };
+Manager.prototype.addTask = function(t) { this.tasks.push(t); checkNotifications(); };
+Manager.prototype.removeTask = function(t) { var i = this.tasks.indexOf(t); if(i>-1){this.tasks.splice(i,1);} };
 Manager.prototype.getWeeklyTasks = function() { return this.tasks.filter(function(t){return t.type==='weekly';}); };
 Manager.prototype.getMonthlyTasks = function() { return this.tasks.filter(function(t){return t.type==='monthly';}); };
 Manager.prototype.getOnetimeTasks = function() { return this.tasks.filter(function(t){return t.type==='onetime';}); };
@@ -296,54 +236,25 @@ function updateAssigneeButtons() {
   }
 }
 function setType(type) { newTaskType=type; var bs=document.getElementsByClassName('type-btn'); for(var i=0;i<bs.length;i++){bs[i].classList.remove('active');if(bs[i].classList.contains(type))bs[i].classList.add('active');} }
-
 function saveTaskFromForm() {
-  var titleInput = document.getElementById('task-title');
-  var hoursInput = document.getElementById('task-hours');
-  var deadlineInput = document.getElementById('task-deadline');
-  var descInput = document.getElementById('task-description');
-  var t = titleInput ? titleInput.value.trim() : '';
-  var h = hoursInput ? parseInt(hoursInput.value) : 0;
-  var d = deadlineInput ? deadlineInput.value.trim() : '';
-  var desc = descInput ? descInput.value.trim() : '';
+  var t = document.getElementById('task-title').value.trim();
+  var h = parseInt(document.getElementById('task-hours').value);
+  var d = document.getElementById('task-deadline').value.trim();
+  var desc = document.getElementById('task-description').value.trim();
   if (t && h && d && newTaskAssignee) {
-    var task = new Task(t, newTaskType, h, d, newTaskAssignee, desc);
-    newTaskAssignee.addTask(task);
-    titleInput.value = ''; hoursInput.value = ''; deadlineInput.value = '';
-    if (descInput) descInput.value = '';
+    newTaskAssignee.addTask(new Task(t, newTaskType, h, d, newTaskAssignee, desc));
+    document.getElementById('task-title').value = '';
+    document.getElementById('task-hours').value = '';
+    document.getElementById('task-deadline').value = '';
+    document.getElementById('task-description').value = '';
     hideForm();
   }
 }
-
 function showForm() { showAddForm=true; newTaskAssignee=currentManager; document.getElementById('add-form').classList.add('visible'); document.getElementById('overlay').classList.add('visible'); setType('weekly'); updateAssigneeButtons(); }
 function hideForm() { showAddForm=false; document.getElementById('add-form').classList.remove('visible'); document.getElementById('overlay').classList.remove('visible'); }
 
 // ====== УВЕДОМЛЕНИЯ ======
 function checkNotifications() { notifications=[]; for(var i=0;i<managers.length;i++){var m=managers[i]; if(m.getWeeklyHours()>40) notifications.push({type:'overload',message:m.name+': перегруз '+m.getWeeklyHours().toFixed(1)+'ч'});} }
-
-// ====== ДАННЫЕ ======
-function saveData() {
-  try {
-    var data = [];
-    for (var i=0;i<managers.length;i++) {
-      var m=managers[i]; var tasksData=[];
-      for (var j=0;j<m.tasks.length;j++) {
-        var t=m.tasks[j];
-        tasksData.push({title:t.title,type:t.type,hours:t.hours,deadline:t.deadline,description:t.description||'',status:t.status,completedDate:t.completedDate||null,assigneeName:t.assignee?t.assignee.name:null});
-      }
-      data.push({name:m.name,tasks:tasksData});
-    }
-    localStorage.setItem('taskManagerData',JSON.stringify(data));
-  } catch(e) {}
-}
-
-// ====== ЭКСПОРТ ======
-function exportToXLS() {
-  var xls='<?xml version="1.0"?><?mso-application progid="Excel.Sheet"?><Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"><Worksheet ss:Name="Задачи"><Table>';
-  for(var i=0;i<managers.length;i++){var m=managers[i];for(var j=0;j<m.tasks.length;j++){var t=m.tasks[j];xls+='<Row><Cell><Data ss:Type="String">'+m.name+'</Data></Cell><Cell><Data ss:Type="String">'+t.title+'</Data></Cell><Cell><Data ss:Type="String">'+(t.description||'')+'</Data></Cell><Cell><Data ss:Type="String">'+(t.type==='weekly'?'Еженедельная':t.type==='monthly'?'Ежемесячная':'Разовая')+'</Data></Cell><Cell><Data ss:Type="Number">'+t.hours+'</Data></Cell><Cell><Data ss:Type="String">'+t.deadline+'</Data></Cell><Cell><Data ss:Type="String">'+(t.status==='done'?'Выполнена':'В работе')+'</Data></Cell></Row>';}}
-  xls+='</Table></Worksheet></Workbook>';
-  var blob=new Blob([xls],{type:'application/vnd.ms-excel'});var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='tasks.xls';a.click();
-}
 
 // ====== КЛИКИ ======
 function mousePressed() {
@@ -358,7 +269,6 @@ function mousePressed() {
     if (mouseX > 175 && mouseX < 315) { activeView = 'team'; hideForm(); return; }
     if (mouseX > 320 && mouseX < 460) { activeView = 'calendar'; hideForm(); return; }
     if (mouseX > 480 && mouseX < 610) { exportToXLS(); return; }
-    if (mouseX > 620 && mouseX < 750) { saveData(); return; }
   }
   if (activeView === 'calendar') {
     for (var i = 0; i < managers.length; i++) {
@@ -378,14 +288,14 @@ function mousePressed() {
       for (var j=0;j<Math.min(active.length,5);j++) {
         var ty=226+j*34;
         if (mouseX>block.x+308&&mouseX<block.x+330&&mouseY>ty+6&&mouseY<ty+26){currentManager.removeTask(active[j]);return;}
-        if (mouseX>block.x+10&&mouseX<block.x+26&&mouseY>ty+6&&mouseY<ty+22){active[j].complete();saveData();checkNotifications();return;}
+        if (mouseX>block.x+10&&mouseX<block.x+26&&mouseY>ty+6&&mouseY<ty+22){active[j].complete();checkNotifications();return;}
       }
     }
     var completed=currentManager.getCompletedTasks();
     for (var k=0;k<Math.min(completed.length,4);k++) {
       var t=completed[k],ty=464+k*30;
       if (mouseX>335&&mouseX<360&&mouseY>ty+3&&mouseY<ty+23){currentManager.removeTask(t);return;}
-      if (mouseX>290&&mouseX<325&&mouseY>ty+3&&mouseY<ty+23){t.reopen();saveData();checkNotifications();return;}
+      if (mouseX>290&&mouseX<325&&mouseY>ty+3&&mouseY<ty+23){t.reopen();checkNotifications();return;}
     }
   }
 }
