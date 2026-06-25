@@ -347,10 +347,8 @@ function exportToXLS() {
 
 // ====== КЛИКИ ======
 function mousePressed() {
-  // Колокольчик
-  if (mouseX > 1095 && mouseX < 1130 && mouseY > 10 && mouseY < 45) {
-    showNotifications = !showNotifications; return;
-  }
+  alert('X=' + Math.round(mouseX) + ' Y=' + Math.round(mouseY));
+}
   // Уведомления
   if (showNotifications) {
     if (mouseX < 900 || mouseX > 1160 || mouseY < 55 || mouseY > 275) showNotifications = false;
