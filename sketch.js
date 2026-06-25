@@ -35,10 +35,10 @@ function setup() {
   let canvas = createCanvas(1200, 850);
   canvas.parent('app-container');
   textFont('Arial');
-  loadData();
-  if (managers.length === 0 || managers[0].name !== 'Александра Пименова (Руководитель)') {
-    createTestData();
-  }
+  
+  // ВСЕГДА загружаем тестовые данные при старте
+  loadOrCreateData();
+  
   currentManager = managers[0];
   calendarManager = managers[0];
   newTaskAssignee = currentManager;
@@ -893,17 +893,21 @@ function saveData() {
   localStorage.setItem('taskManagerData', JSON.stringify(data));
 }
 
-function loadData() {
+function loadOrCreateData() {
   let saved = localStorage.getItem('taskManagerData');
+  
   if (saved) {
+    // Пробуем загрузить сохранённые данные
     let data = JSON.parse(saved);
     managers = [];
     let managerMap = {};
+    
     for (let m of data.managers) {
       let manager = new Manager(m.name);
       managerMap[m.name] = manager;
       managers.push(manager);
     }
+    
     for (let m of data.managers) {
       let manager = managerMap[m.name];
       for (let t of m.tasks) {
@@ -914,23 +918,39 @@ function loadData() {
         manager.tasks.push(task);
       }
     }
-    checkNotifications();
+    
+    // Проверяем, что данные загрузились корректно
+    if (managers.length === 0 || !managers[0].name.includes('Пименова')) {
+      createTestData();
+    }
+  } else {
+    // Если данных нет — создаём новые
+    createTestData();
   }
+  
+  checkNotifications();
 }
-
 function createTestData() {
-  localStorage.removeItem('taskManagerData');
+  console.log('Создаю тестовые данные...');
+  
+  // Очищаем старые данные
   managers = [];
+  
   let alexandra = new Manager('Александра Пименова (Руководитель)');
   let vera = new Manager('Вера Гусева (Менеджер)');
   let varvara = new Manager('Варвара Андреева (Менеджер)');
+  
   managers.push(alexandra, vera, varvara);
+  
   alexandra.addTask(new Task('Стратегическое планирование', 'weekly', 4, 'ПН', alexandra, 'Определить цели на квартал, распределить бюджеты'));
   alexandra.addTask(new Task('Совещание с командой', 'weekly', 2, 'СР', alexandra, 'Обсудить результаты недели, собрать обратную связь'));
+  
   vera.addTask(new Task('Отчёт по продажам', 'weekly', 3, 'ПН', vera, 'Собрать данные из CRM, подготовить графики'));
-  vera.addTask(new Task('Подготовка презентации', 'onetime', 6, '28.06.2026', vera, 'Для встречи с клиентом Петровым, нужны слайды по продукту'));
+  vera.addTask(new Task('Подготовка презентации', 'onetime', 6, '28.06.2026', vera, 'Для встречи с клиентом Петровым'));
+  
   varvara.addTask(new Task('Анализ рынка', 'weekly', 4, 'ПН', varvara, 'Мониторинг конкурентов, обновление сводки'));
-  varvara.addTask(new Task('Обновление базы данных', 'onetime', 8, '27.06.2026', varvara, 'Перенести данные из Excel в новую CRM-систему'));
+  varvara.addTask(new Task('Обновление базы данных', 'onetime', 8, '27.06.2026', varvara, 'Перенести данные из Excel в новую CRM'));
+  
   saveData();
-  checkNotifications();
+  console.log('Тестовые данные созданы. Менеджеров: ' + managers.length);
 }
