@@ -392,63 +392,73 @@ function hideForm() { showAddForm = false; document.getElementById('add-form').c
 
 // === КЛИКИ ===
 function mousePressed() {
-  console.log('Клик! X:', mouseX, 'Y:', mouseY);
-  
-  if (mouseX > 1090 && mouseX < 1130 && mouseY > 5 && mouseY < 45) { showNotifications = !showNotifications; return; }
-  if (showNotifications) {
-    if (mouseX < 900 || mouseX > 1180 || mouseY < 65 || mouseY > 315) showNotifications = false;
-    if (mouseX > 915 && mouseX < 1165 && mouseY > 275 && mouseY < 303) { notifications = []; showNotifications = false; }
+  // Колокольчик
+  if (mouseX > 1090 && mouseX < 1130 && mouseY > 5 && mouseY < 45) {
+    showNotifications = !showNotifications;
     return;
   }
+  
+  // Уведомления
+  if (showNotifications) {
+    if (mouseX < 900 || mouseX > 1180 || mouseY < 65 || mouseY > 315) {
+      showNotifications = false;
+    }
+    if (mouseX > 915 && mouseX < 1165 && mouseY > 275 && mouseY < 303) {
+      notifications = [];
+      showNotifications = false;
+    }
+    return;
+  }
+  
+  // Экспорт и вкладки
   if (mouseY > 95 && mouseY < 129) {
     if (mouseX > 500 && mouseX < 640) { exportToXLS(); return; }
     if (mouseX > 30 && mouseX < 170) { activeView = 'personal'; hideForm(); return; }
     if (mouseX > 180 && mouseX < 320) { activeView = 'team'; hideForm(); return; }
     if (mouseX > 330 && mouseX < 470) { activeView = 'calendar'; hideForm(); return; }
   }
-  if (activeView === 'calendar') {
-    for (let i = 0; i < managers.length; i++) {
-      if (mouseX > 380+i*200 && mouseX < 560+i*200 && mouseY > 138 && mouseY < 166) calendarManager = managers[i];
+  
+  if (activeView === 'calendar' || activeView === 'team') return;
+  
+  // Переключение менеджеров
+  for (let i = 0; i < managers.length; i++) {
+    if (mouseX > 130 + i * 200 && mouseX < 315 + i * 200 && mouseY > 140 && mouseY < 170) {
+      currentManager = managers[i];
+      hideForm();
     }
+  }
+  
+  // Кнопка "Новая задача"
+  if (mouseX > 850 && mouseX < 1070 && mouseY > 705 && mouseY < 749) {
+    showAddForm ? hideForm() : showForm();
     return;
   }
-  if (activeView === 'team') return;
-  for (let i = 0; i < managers.length; i++) {
-    if (mouseX > 130+i*200 && mouseX < 315+i*200 && mouseY > 140 && mouseY < 170) { currentManager = managers[i]; hideForm(); }
-  }
-  if (mouseX > 850 && mouseX < 1070 && mouseY > 705 && mouseY < 749) { showAddForm ? hideForm() : showForm(); return; }
   
+  // Задачи
   if (currentManager && !showAddForm) {
     let blocks = [
-      { tasks: currentManager.getWeeklyTasks(), x: 30, y: 216 },
-      { tasks: currentManager.getMonthlyTasks(), x: 380, y: 216 },
-      { tasks: currentManager.getOnetimeTasks(), x: 730, y: 216 }
+      { tasks: currentManager.getWeeklyTasks(), x: 30 },
+      { tasks: currentManager.getMonthlyTasks(), x: 380 },
+      { tasks: currentManager.getOnetimeTasks(), x: 730 }
     ];
     
     for (let b of blocks) {
       let active = b.tasks.filter(t => t.status !== 'done');
+      
       for (let i = 0; i < min(active.length, 5); i++) {
-        let ty = b.y + 50 + i * 36;
+        let task = active[i];
+        let ty = 180 + 36 + 14 + i * 36; // 180 (блок) + 36 (заголовок) + 14 (отступ) + i*36
         
-        // Проверка на удаление
-        let delX1 = b.x + 308;
-        let delX2 = b.x + 330;
-        let delY1 = ty + 2;
-        let delY2 = ty + 24;
-        
-        console.log('Задача:', active[i].title, 'Кнопка X:', delX1, '-', delX2, 'Y:', delY1, '-', delY2);
-        console.log('Мышь X:', mouseX, 'Y:', mouseY);
-        
-        if (mouseX > delX1 && mouseX < delX2 && mouseY > delY1 && mouseY < delY2) {
-          console.log('УДАЛЯЮ задачу:', active[i].title);
-          currentManager.removeTask(active[i]);
+        // Кнопка удаления — проверяем ПЕРВОЙ
+        if (mouseX > b.x + 305 && mouseX < b.x + 329 && mouseY > ty + 7 && mouseY < ty + 27) {
+          console.log('Удаляю задачу: ' + task.title);
+          currentManager.removeTask(task);
           return;
         }
         
         // Чекбокс
-        if (mouseX > b.x+12 && mouseX < b.x+30 && mouseY > ty+2 && mouseY < ty+20) {
-          console.log('ЗАВЕРШАЮ задачу:', active[i].title);
-          active[i].complete();
+        if (mouseX > b.x + 10 && mouseX < b.x + 26 && mouseY > ty + 8 && mouseY < ty + 24) {
+          task.complete();
           saveData();
           checkNotifications();
           return;
@@ -456,11 +466,31 @@ function mousePressed() {
       }
     }
     
-    let comp = currentManager.getCompletedTasks().sort((a,b) => (b.completedDate||'').localeCompare(a.completedDate||''));
-    for (let i = 0; i < min(comp.length, 4); i++) {
-      let ty = 468 + i * 32;
-      if (mouseX > 350 && mouseX < 378 && mouseY > ty+2 && mouseY < ty+24) { currentManager.removeTask(comp[i]); return; }
-      if (mouseX > 300 && mouseX < 340 && mouseY > ty+2 && mouseY < ty+24) { comp[i].reopen(); saveData(); checkNotifications(); return; }
+    // Завершённые задачи
+    let completed = currentManager.getCompletedTasks().sort(function(a, b) {
+      if (!a.completedDate) return 1;
+      if (!b.completedDate) return -1;
+      return b.completedDate.localeCompare(a.completedDate);
+    });
+    
+    for (let i = 0; i < min(completed.length, 4); i++) {
+      let task = completed[i];
+      let ty = 420 + 36 + 12 + i * 32;
+      
+      // Кнопка удаления
+      if (mouseX > 350 && mouseX < 378 && mouseY > ty + 2 && mouseY < ty + 24) {
+        console.log('Удаляю завершённую задачу: ' + task.title);
+        currentManager.removeTask(task);
+        return;
+      }
+      
+      // Кнопка восстановления
+      if (mouseX > 300 && mouseX < 340 && mouseY > ty + 2 && mouseY < ty + 24) {
+        task.reopen();
+        saveData();
+        checkNotifications();
+        return;
+      }
     }
   }
 }
