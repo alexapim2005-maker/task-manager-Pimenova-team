@@ -237,17 +237,24 @@ function updateAssigneeButtons() {
 }
 function setType(type) { newTaskType=type; var bs=document.getElementsByClassName('type-btn'); for(var i=0;i<bs.length;i++){bs[i].classList.remove('active');if(bs[i].classList.contains(type))bs[i].classList.add('active');} }
 function saveTaskFromForm() {
-  alert('Кнопка нажата!');
-  
   var titleEl = document.getElementById('task-title');
   var hoursEl = document.getElementById('task-hours');
   var deadlineEl = document.getElementById('task-deadline');
   var descEl = document.getElementById('task-description');
   
-  if (!titleEl || !hoursEl || !deadlineEl) {
-    alert('Поля не найдены! titleEl=' + !!titleEl + ' hoursEl=' + !!hoursEl + ' deadlineEl=' + !!deadlineEl);
-    return;
+  var t = titleEl.value.trim();
+  var h = parseInt(hoursEl.value);
+  var d = deadlineEl.value.trim();
+  var desc = descEl ? descEl.value.trim() : '';
+  
+  if (t && h && d && newTaskAssignee) {
+    newTaskAssignee.addTask(new Task(t, newTaskType, h, d, newTaskAssignee, desc));
+    titleEl.value = ''; hoursEl.value = ''; deadlineEl.value = '';
+    if (descEl) descEl.value = '';
+    hideForm();
+    saveData();
   }
+}
   
   var t = titleEl.value.trim();
   var h = parseInt(hoursEl.value);
@@ -270,6 +277,30 @@ function hideForm() { showAddForm=false; document.getElementById('add-form').cla
 function checkNotifications() { notifications=[]; for(var i=0;i<managers.length;i++){var m=managers[i]; if(m.getWeeklyHours()>40) notifications.push({type:'overload',message:m.name+': перегруз '+m.getWeeklyHours().toFixed(1)+'ч'});} }
 
 // ====== КЛИКИ ======
+
+function saveData() {
+  try {
+    var data = [];
+    for (var i=0;i<managers.length;i++) {
+      var m=managers[i]; var tasksData=[];
+      for (var j=0;j<m.tasks.length;j++) {
+        var t=m.tasks[j];
+        tasksData.push({title:t.title,type:t.type,hours:t.hours,deadline:t.deadline,description:t.description||'',status:t.status,completedDate:t.completedDate||null,assigneeName:t.assignee?t.assignee.name:null});
+      }
+      data.push({name:m.name,tasks:tasksData});
+    }
+    localStorage.setItem('taskManagerData',JSON.stringify(data));
+  } catch(e) {}
+}
+
+function exportToXLS() {
+  var xls='<?xml version="1.0"?><?mso-application progid="Excel.Sheet"?><Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"><Worksheet ss:Name="Задачи"><Table>';
+  for(var i=0;i<managers.length;i++){var m=managers[i];for(var j=0;j<m.tasks.length;j++){var t=m.tasks[j];xls+='<Row><Cell><Data ss:Type="String">'+m.name+'</Data></Cell><Cell><Data ss:Type="String">'+t.title+'</Data></Cell><Cell><Data ss:Type="String">'+(t.description||'')+'</Data></Cell><Cell><Data ss:Type="String">'+(t.type==='weekly'?'Еженедельная':t.type==='monthly'?'Ежемесячная':'Разовая')+'</Data></Cell><Cell><Data ss:Type="Number">'+t.hours+'</Data></Cell><Cell><Data ss:Type="String">'+t.deadline+'</Data></Cell><Cell><Data ss:Type="String">'+(t.status==='done'?'Выполнена':'В работе')+'</Data></Cell></Row>';}}
+  xls+='</Table></Worksheet></Workbook>';
+  var blob=new Blob([xls],{type:'application/vnd.ms-excel'});var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='tasks.xls';a.click();
+}
+
+function mousePressed() {  // ← это уже есть, не трогай
 function mousePressed() {
   if (mouseX > 1095 && mouseX < 1130 && mouseY > 10 && mouseY < 45) { showNotifications = !showNotifications; return; }
   if (showNotifications) {
