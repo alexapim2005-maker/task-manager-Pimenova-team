@@ -8,6 +8,9 @@ let calendarManager = null;
 let notifications = [];
 let showNotifications = false;
 let currentDate = '25.06.2026';
+let hoveredTask = null;
+let hoveredTaskX = 0;
+let hoveredTaskY = 0;
 
 let colors = {
   bg: '#f5f6fa',
@@ -45,6 +48,8 @@ function setup() {
 
 function draw() {
   background(colors.bg);
+  hoveredTask = null;
+  
   drawHeader();
   drawViewToggle();
   drawNotificationBell();
@@ -57,6 +62,21 @@ function draw() {
     drawTeamDashboard();
   } else if (activeView === 'calendar') {
     drawCalendarView();
+  }
+  
+  // Подсказка с описанием
+  updateDescriptionTooltip();
+}
+
+function updateDescriptionTooltip() {
+  let tooltip = document.getElementById('description-tooltip');
+  if (hoveredTask && hoveredTask.description) {
+    tooltip.style.display = 'block';
+    tooltip.style.left = (hoveredTaskX + 15) + 'px';
+    tooltip.style.top = (hoveredTaskY - 10) + 'px';
+    tooltip.textContent = hoveredTask.description;
+  } else {
+    tooltip.style.display = 'none';
   }
 }
 
@@ -223,11 +243,32 @@ function drawTaskBlock(title, tasks, x, y, accentColor) {
   for (let i = 0; i < min(activeTasks.length, 5); i++) {
     let task = activeTasks[i];
     let ty = y + 50 + i * 36;
+    
+    // Проверка наведения для тултипа
+    if (mouseX > x + 38 && mouseX < x + 300 && mouseY > ty && mouseY < ty + 30 && task.description) {
+      hoveredTask = task;
+      hoveredTaskX = mouseX;
+      hoveredTaskY = mouseY;
+    }
+    
     if (isTaskOverdue(task)) {
       fill('#fff5f5');
       noStroke();
       rect(x + 2, ty - 2, 336, 34, 4);
     }
+    
+    // Индикатор описания
+    if (task.description) {
+      fill('#74b9ff');
+      noStroke();
+      circle(x + 38, ty + 24, 8);
+      fill('#ffffff');
+      textSize(6);
+      textAlign(CENTER);
+      text('i', x + 38, ty + 26);
+      textAlign(LEFT);
+    }
+    
     fill('#ffffff');
     stroke('#b2bec3');
     strokeWeight(2);
@@ -235,27 +276,28 @@ function drawTaskBlock(title, tasks, x, y, accentColor) {
     noStroke();
     fill(isTaskOverdue(task) ? colors.danger : colors.text);
     textSize(12);
-    text(task.title, x + 38, ty + 10);
+    text(task.title, x + 50, ty + 10);
     fill('#636e72');
     textSize(10);
     let assignee = task.assignee ? task.assignee.name.split('(')[0].trim() : 'Неназначена';
-    text(task.hours + 'ч | ' + task.deadline + ' | ' + assignee, x + 38, ty + 26);
+    text(task.hours + 'ч | ' + task.deadline + ' | ' + assignee, x + 50, ty + 26);
+    
+    // Кнопка удаления
     let delX = x + 308;
     let delY = ty + 2;
-    let delW = 22;
-    let delH = 22;
-    if (mouseX > delX && mouseX < delX + delW && mouseY > delY && mouseY < delY + delH) {
+    if (mouseX > delX && mouseX < delX + 22 && mouseY > delY && mouseY < delY + 22) {
       fill('#c0392b');
     } else {
       fill('#e74c3c');
     }
     noStroke();
-    rect(delX, delY, delW, delH, 4);
+    rect(delX, delY, 22, 22, 4);
     fill('#ffffff');
     textSize(14);
     textAlign(CENTER);
-    text('×', delX + delW/2, delY + 17);
+    text('×', delX + 11, delY + 17);
     textAlign(LEFT);
+    
     if (isTaskOverdue(task)) {
       fill(colors.danger);
       noStroke();
@@ -304,6 +346,13 @@ function drawCompletedBlock(tasks, x, y) {
   for (let i = 0; i < min(sortedTasks.length, maxVisible); i++) {
     let task = sortedTasks[i];
     let ty = y + 48 + i * 32;
+    
+    if (mouseX > x + 35 && mouseX < x + 270 && mouseY > ty && mouseY < ty + 24 && task.description) {
+      hoveredTask = task;
+      hoveredTaskX = mouseX;
+      hoveredTaskY = mouseY;
+    }
+    
     fill(colors.ok);
     noStroke();
     textSize(14);
@@ -318,6 +367,8 @@ function drawCompletedBlock(tasks, x, y) {
     let assignee = task.assignee ? task.assignee.name.split('(')[0].trim() : '';
     let completedInfo = 'Выполнено: ' + (task.completedDate || 'неизвестно');
     text(task.hours + 'ч | ' + completedInfo + ' | ' + assignee, x + 35, ty + 24);
+    
+    // Кнопка восстановления
     let restoreX = x + 270;
     let restoreY = ty + 2;
     if (mouseX > restoreX && mouseX < restoreX + 40 && mouseY > restoreY && mouseY < restoreY + 22) {
@@ -332,6 +383,8 @@ function drawCompletedBlock(tasks, x, y) {
     textAlign(CENTER);
     text('↩', restoreX + 20, restoreY + 16);
     textAlign(LEFT);
+    
+    // Кнопка удаления
     let delX = x + 320;
     let delY = ty + 2;
     if (mouseX > delX && mouseX < delX + 28 && mouseY > delY && mouseY < delY + 22) {
@@ -399,6 +452,171 @@ function drawAddButton() {
   textAlign(LEFT);
 }
 
+function drawTeamDashboard() {
+  let x = 30;
+  let y = 150;
+  fill(colors.text);
+  textSize(20);
+  textStyle(BOLD);
+  text('📊 Сводка по команде', x, y);
+  textStyle(NORMAL);
+  y += 20;
+  let colWidths = [250, 200, 120, 120, 120, 120, 120];
+  let headers = ['Сотрудник', 'Задачи', 'Занято нед.', 'Своб. нед.', 'Занято мес.', 'Своб. мес.', 'Загрузка'];
+  fill(colors.accent);
+  noStroke();
+  rect(x, y, sum(colWidths), 36, 8);
+  fill('#ffffff');
+  textSize(12);
+  textStyle(BOLD);
+  let hx = x + 10;
+  for (let i = 0; i < headers.length; i++) {
+    text(headers[i], hx, y + 23);
+    hx += colWidths[i];
+  }
+  textStyle(NORMAL);
+  y += 40;
+  for (let i = 0; i < managers.length; i++) {
+    let m = managers[i];
+    let weeklyHours = m.getWeeklyHours();
+    let monthlyHours = m.getMonthlyHours();
+    let freeWeekly = max(0, 40 - weeklyHours);
+    let freeMonthly = max(0, 160 - monthlyHours);
+    let loadPct = (weeklyHours / 40) * 100;
+    let loadColor = loadPct > 100 ? colors.danger : (loadPct > 80 ? colors.warning : colors.ok);
+    let activeCount = m.tasks.filter(t => t.status !== 'done').length;
+    let completedCount = m.tasks.filter(t => t.status === 'done').length;
+    fill(i % 2 === 0 ? '#ffffff' : '#f8f9fa');
+    stroke('#e0e0e0');
+    strokeWeight(1);
+    rect(x, y, sum(colWidths), 50);
+    noStroke();
+    fill(colors.text);
+    textSize(14);
+    textStyle(BOLD);
+    text(m.name, x + 10, y + 20);
+    textStyle(NORMAL);
+    fill('#636e72');
+    textSize(11);
+    text('Активных: ' + activeCount + ' | Завершено: ' + completedCount, x + 10, y + 40);
+    fill(weeklyHours > 40 ? colors.danger : colors.text);
+    textSize(14);
+    textAlign(CENTER);
+    text(weeklyHours.toFixed(1) + 'ч', x + colWidths[0] + colWidths[1] + 60, y + 30);
+    fill(freeWeekly > 0 ? colors.ok : '#636e72');
+    text(freeWeekly.toFixed(1) + 'ч', x + colWidths[0] + colWidths[1] + colWidths[2] + 60, y + 30);
+    fill(monthlyHours > 160 ? colors.danger : colors.text);
+    text(monthlyHours.toFixed(1) + 'ч', x + colWidths[0] + colWidths[1] + colWidths[2] + colWidths[3] + 60, y + 30);
+    fill(freeMonthly > 0 ? colors.ok : '#636e72');
+    text(freeMonthly.toFixed(1) + 'ч', x + colWidths[0] + colWidths[1] + colWidths[2] + colWidths[3] + colWidths[4] + 60, y + 30);
+    let barX = x + colWidths[0] + colWidths[1] + colWidths[2] + colWidths[3] + colWidths[4] + 10;
+    let barY = y + 10;
+    let barW = colWidths[5] - 20;
+    fill('#dfe6e9');
+    rect(barX, barY, barW, 12, 6);
+    let barFill = min(loadPct / 100, 1.5);
+    if (barFill > 1) {
+      fill(colors.danger);
+      rect(barX, barY, barW, 12, 6);
+      fill('#ffffff');
+      for (let stripe = 0; stripe < barW; stripe += 6) {
+        rect(barX + stripe, barY, 3, 12);
+      }
+    } else {
+      fill(loadColor);
+      rect(barX, barY, barW * barFill, 12, 6);
+    }
+    fill(colors.text);
+    textSize(11);
+    textAlign(CENTER);
+    text(loadPct.toFixed(0) + '%', barX + barW/2, barY + 35);
+    textAlign(LEFT);
+    y += 54;
+  }
+}
+
+function drawCalendarView() {
+  let x = 30;
+  let y = 150;
+  fill(colors.text);
+  textSize(20);
+  textStyle(BOLD);
+  text('📅 Календарь загрузки', x, y);
+  fill('#636e72');
+  textSize(14);
+  textStyle(NORMAL);
+  text('Сотрудник:', x + 250, y);
+  for (let i = 0; i < managers.length; i++) {
+    let btnX = x + 350 + i * 200;
+    fill(calendarManager === managers[i] ? colors.accent : '#dfe6e9');
+    noStroke();
+    rect(btnX, y - 12, 180, 28, 4);
+    fill(calendarManager === managers[i] ? '#ffffff' : colors.text);
+    textSize(11);
+    textAlign(CENTER);
+    text(managers[i].name.split('(')[0].trim(), btnX + 90, y + 7);
+    textAlign(LEFT);
+  }
+  y += 40;
+  let dayNames = ['ПН', 'ВТ', 'СР', 'ЧТ', 'ПТ', 'СБ', 'ВС'];
+  let cellW = 155;
+  let cellH = 130;
+  let startX = x;
+  for (let d = 0; d < 7; d++) {
+    fill(colors.accent);
+    noStroke();
+    rect(startX + d * cellW + d * 5, y, cellW, 28, 4);
+    fill('#ffffff');
+    textSize(13);
+    textStyle(BOLD);
+    textAlign(CENTER);
+    text(dayNames[d], startX + d * cellW + d * 5 + cellW/2, y + 19);
+    textAlign(LEFT);
+    textStyle(NORMAL);
+  }
+  y += 32;
+  for (let w = 0; w < 4; w++) {
+    for (let d = 0; d < 7; d++) {
+      let cx = startX + d * cellW + d * 5;
+      let cy = y + w * cellH + w * 5;
+      let dayNum = w * 7 + d + 1;
+      fill('#ffffff');
+      stroke('#e0e0e0');
+      strokeWeight(1);
+      rect(cx, cy, cellW, cellH, 6);
+      noStroke();
+      fill(colors.text);
+      textSize(12);
+      textStyle(BOLD);
+      text(dayNum, cx + 10, cy + 18);
+      textStyle(NORMAL);
+      let dayTasks = getDayTasks(calendarManager, dayNum);
+      let taskY = cy + 28;
+      for (let t = 0; t < min(dayTasks.length, 4); t++) {
+        let task = dayTasks[t];
+        let taskColor;
+        if (task.type === 'weekly') taskColor = colors.lightWeekly;
+        else if (task.type === 'monthly') taskColor = colors.lightMonthly;
+        else taskColor = colors.lightOnetime;
+        if (isTaskOverdue(task)) taskColor = colors.danger;
+        fill(taskColor);
+        noStroke();
+        rect(cx + 8, taskY, cellW - 16, 18, 3);
+        fill(colors.text);
+        textSize(10);
+        let taskTitle = task.title.length > 14 ? task.title.substring(0, 13) + '…' : task.title;
+        text(taskTitle, cx + 12, taskY + 13);
+        textAlign(RIGHT);
+        text(task.hours + 'ч', cx + cellW - 12, taskY + 13);
+        textAlign(LEFT);
+        taskY += 22;
+      }
+    }
+  }
+}
+
+// === КЛАССЫ ===
+
 class Manager {
   constructor(name) {
     this.name = name;
@@ -417,18 +635,10 @@ class Manager {
       checkNotifications();
     }
   }
-  getWeeklyTasks() {
-    return this.tasks.filter(t => t.type === 'weekly');
-  }
-  getMonthlyTasks() {
-    return this.tasks.filter(t => t.type === 'monthly');
-  }
-  getOnetimeTasks() {
-    return this.tasks.filter(t => t.type === 'onetime');
-  }
-  getCompletedTasks() {
-    return this.tasks.filter(t => t.status === 'done');
-  }
+  getWeeklyTasks() { return this.tasks.filter(t => t.type === 'weekly'); }
+  getMonthlyTasks() { return this.tasks.filter(t => t.type === 'monthly'); }
+  getOnetimeTasks() { return this.tasks.filter(t => t.type === 'onetime'); }
+  getCompletedTasks() { return this.tasks.filter(t => t.status === 'done'); }
   getWeeklyHours() {
     let weekly = this.tasks.filter(t => t.type === 'weekly' && t.status !== 'done');
     let monthly = this.tasks.filter(t => t.type === 'monthly' && t.status !== 'done');
@@ -443,12 +653,13 @@ class Manager {
 }
 
 class Task {
-  constructor(title, type, hours, deadline, assignee) {
+  constructor(title, type, hours, deadline, assignee, description) {
     this.title = title;
     this.type = type;
     this.hours = hours;
     this.deadline = deadline;
     this.assignee = assignee;
+    this.description = description || '';
     this.status = 'todo';
     this.completedDate = null;
   }
@@ -466,9 +677,9 @@ class Task {
   }
 }
 
-function sum(arr) {
-  return arr.reduce((a, b) => a + b, 0);
-}
+// === ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ===
+
+function sum(arr) { return arr.reduce((a, b) => a + b, 0); }
 
 function checkNotifications() {
   notifications = [];
@@ -510,46 +721,45 @@ function getDayTasks(manager, dayNum) {
     else if (dl.includes('сб') || dl.includes('суб')) taskDay = 6;
     else if (dl.includes('вс') || dl.includes('воск')) taskDay = 7;
     else {
-      if (task.type === 'monthly') {
-        taskDay = ((task.title.length + task.hours) % 28) + 1;
-      } else {
-        taskDay = ((task.title.length * 3) % 28) + 1;
-      }
+      taskDay = ((task.title.length + task.hours) % 28) + 1;
     }
     if (taskDay === dayNum) tasks.push(task);
   }
   return tasks;
 }
 
-function getWeekHours(manager, weekNum) {
-  let hours = 0;
-  for (let d = 0; d < 7; d++) {
-    let dayNum = weekNum * 7 + d + 1;
-    let dayTasks = getDayTasks(manager, dayNum);
-    hours += dayTasks.reduce((sum, t) => sum + t.hours, 0);
-  }
-  return hours;
-}
-
+// === ЭКСПОРТ ===
 function exportToXLS() {
-  let xlsContent = '<?xml version="1.0" encoding="UTF-8"?>\n';
-  xlsContent += '<?mso-application progid="Excel.Sheet"?>\n';
-  xlsContent += '<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">\n';
-  xlsContent += '<Worksheet ss:Name="Сводка">\n<Table>\n';
-  xlsContent += '<Row><Cell><Data ss:Type="String">Сотрудник</Data></Cell><Cell><Data ss:Type="String">Занято нед</Data></Cell><Cell><Data ss:Type="String">Своб нед</Data></Cell></Row>\n';
+  let xlsContent = '<?xml version="1.0" encoding="UTF-8"?>\n<?mso-application progid="Excel.Sheet"?>\n<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">\n';
+  xlsContent += '<Worksheet ss:Name="Задачи">\n<Table>\n';
+  xlsContent += '<Row><Cell><Data ss:Type="String">Сотрудник</Data></Cell><Cell><Data ss:Type="String">Задача</Data></Cell><Cell><Data ss:Type="String">Описание</Data></Cell><Cell><Data ss:Type="String">Тип</Data></Cell><Cell><Data ss:Type="String">Часы</Data></Cell><Cell><Data ss:Type="String">Дедлайн</Data></Cell><Cell><Data ss:Type="String">Статус</Data></Cell><Cell><Data ss:Type="String">Дата выполнения</Data></Cell></Row>\n';
   for (let m of managers) {
-    let wh = m.getWeeklyHours();
-    xlsContent += '<Row><Cell><Data ss:Type="String">' + m.name + '</Data></Cell><Cell><Data ss:Type="Number">' + wh + '</Data></Cell><Cell><Data ss:Type="Number">' + max(0, 40 - wh) + '</Data></Cell></Row>\n';
+    for (let t of m.tasks) {
+      let typeLabel = t.type === 'weekly' ? 'Еженедельная' : (t.type === 'monthly' ? 'Ежемесячная' : 'Разовая');
+      let statusLabel = t.status === 'done' ? 'Выполнена' : 'В работе';
+      xlsContent += '<Row>';
+      xlsContent += '<Cell><Data ss:Type="String">' + m.name + '</Data></Cell>';
+      xlsContent += '<Cell><Data ss:Type="String">' + t.title + '</Data></Cell>';
+      xlsContent += '<Cell><Data ss:Type="String">' + (t.description || '') + '</Data></Cell>';
+      xlsContent += '<Cell><Data ss:Type="String">' + typeLabel + '</Data></Cell>';
+      xlsContent += '<Cell><Data ss:Type="Number">' + t.hours + '</Data></Cell>';
+      xlsContent += '<Cell><Data ss:Type="String">' + t.deadline + '</Data></Cell>';
+      xlsContent += '<Cell><Data ss:Type="String">' + statusLabel + '</Data></Cell>';
+      xlsContent += '<Cell><Data ss:Type="String">' + (t.completedDate || '') + '</Data></Cell>';
+      xlsContent += '</Row>\n';
+    }
   }
   xlsContent += '</Table>\n</Worksheet>\n</Workbook>';
   let blob = new Blob([xlsContent], { type: 'application/vnd.ms-excel' });
   let url = URL.createObjectURL(blob);
   let a = document.createElement('a');
   a.href = url;
-  a.download = 'export.xls';
+  a.download = 'TaskManager_export.xls';
   a.click();
   URL.revokeObjectURL(url);
 }
+
+// === HTML-ФОРМА ===
 
 function updateAssigneeButtons() {
   let container = document.getElementById('assignee-btns');
@@ -583,12 +793,15 @@ function saveTask() {
   let title = document.getElementById('task-title').value;
   let hours = parseInt(document.getElementById('task-hours').value);
   let deadline = document.getElementById('task-deadline').value;
+  let description = document.getElementById('task-description').value;
+  
   if (title && hours && deadline && newTaskAssignee) {
-    let task = new Task(title, newTaskType, hours, deadline, newTaskAssignee);
+    let task = new Task(title, newTaskType, hours, deadline, newTaskAssignee, description);
     newTaskAssignee.addTask(task);
     document.getElementById('task-title').value = '';
     document.getElementById('task-hours').value = '';
     document.getElementById('task-deadline').value = '';
+    document.getElementById('task-description').value = '';
     hideForm();
   }
 }
@@ -607,7 +820,10 @@ function hideForm() {
   document.getElementById('task-title').value = '';
   document.getElementById('task-hours').value = '';
   document.getElementById('task-deadline').value = '';
+  document.getElementById('task-description').value = '';
 }
+
+// === ОБРАБОТКА СОБЫТИЙ ===
 
 function mousePressed() {
   if (mouseX > 1090 && mouseX < 1130 && mouseY > 5 && mouseY < 45) { showNotifications = !showNotifications; return; }
@@ -633,6 +849,7 @@ function mousePressed() {
     if (mouseX > 130 + i * 200 && mouseX < 315 + i * 200 && mouseY > 140 && mouseY < 170) { currentManager = managers[i]; hideForm(); }
   }
   if (mouseX > 850 && mouseX < 1070 && mouseY > 705 && mouseY < 749) { showAddForm ? hideForm() : showForm(); return; }
+  
   if (currentManager && !showAddForm) {
     let blocks = [
       { tasks: currentManager.getWeeklyTasks(), x: 30, y: 216 },
@@ -641,11 +858,11 @@ function mousePressed() {
     ];
     for (let block of blocks) {
       let activeTasks = block.tasks.filter(t => t.status !== 'done');
-      for (let i = 0; i < activeTasks.length; i++) {
+      for (let i = 0; i < min(activeTasks.length, 5); i++) {
         let task = activeTasks[i];
         let ty = block.y + 50 + i * 36;
-        if (mouseX > block.x + 12 && mouseX < block.x + 30 && mouseY > ty + 2 && mouseY < ty + 20) { task.complete(); saveData(); checkNotifications(); return; }
         if (mouseX > block.x + 308 && mouseX < block.x + 330 && mouseY > ty + 2 && mouseY < ty + 24) { currentManager.removeTask(task); return; }
+        if (mouseX > block.x + 12 && mouseX < block.x + 30 && mouseY > ty + 2 && mouseY < ty + 20) { task.complete(); saveData(); checkNotifications(); return; }
       }
     }
     let completedTasks = currentManager.getCompletedTasks().slice().sort((a, b) => {
@@ -656,18 +873,20 @@ function mousePressed() {
     for (let i = 0; i < completedTasks.length; i++) {
       let task = completedTasks[i];
       let ty = 420 + 48 + i * 32;
-      if (mouseX > 300 && mouseX < 340 && mouseY > ty + 2 && mouseY < ty + 24) { task.reopen(); saveData(); checkNotifications(); return; }
       if (mouseX > 350 && mouseX < 378 && mouseY > ty + 2 && mouseY < ty + 24) { currentManager.removeTask(task); return; }
+      if (mouseX > 300 && mouseX < 340 && mouseY > ty + 2 && mouseY < ty + 24) { task.reopen(); saveData(); checkNotifications(); return; }
     }
   }
 }
+
+// === СОХРАНЕНИЕ И ЗАГРУЗКА ===
 
 function saveData() {
   let data = managers.map(m => ({
     name: m.name,
     tasks: m.tasks.map(t => ({
       title: t.title, type: t.type, hours: t.hours, deadline: t.deadline,
-      status: t.status, completedDate: t.completedDate,
+      description: t.description, status: t.status, completedDate: t.completedDate,
       assigneeName: t.assignee ? t.assignee.name : null
     }))
   }));
@@ -689,7 +908,7 @@ function loadData() {
       let manager = managerMap[m.name];
       for (let t of m.tasks) {
         let assignee = t.assigneeName ? managerMap[t.assigneeName] : manager;
-        let task = new Task(t.title, t.type, t.hours, t.deadline, assignee);
+        let task = new Task(t.title, t.type, t.hours, t.deadline, assignee, t.description || '');
         task.status = t.status;
         task.completedDate = t.completedDate || null;
         manager.tasks.push(task);
@@ -706,12 +925,12 @@ function createTestData() {
   let vera = new Manager('Вера Гусева (Менеджер)');
   let varvara = new Manager('Варвара Андреева (Менеджер)');
   managers.push(alexandra, vera, varvara);
-  alexandra.addTask(new Task('Стратегическое планирование', 'weekly', 4, 'ПН', alexandra));
-  alexandra.addTask(new Task('Совещание с командой', 'weekly', 2, 'СР', alexandra));
-  vera.addTask(new Task('Отчёт по продажам', 'weekly', 3, 'ПН', vera));
-  vera.addTask(new Task('Подготовка презентации', 'onetime', 6, '28.06.2026', vera));
-  varvara.addTask(new Task('Анализ рынка', 'weekly', 4, 'ПН', varvara));
-  varvara.addTask(new Task('Обновление базы данных', 'onetime', 8, '27.06.2026', varvara));
+  alexandra.addTask(new Task('Стратегическое планирование', 'weekly', 4, 'ПН', alexandra, 'Определить цели на квартал, распределить бюджеты'));
+  alexandra.addTask(new Task('Совещание с командой', 'weekly', 2, 'СР', alexandra, 'Обсудить результаты недели, собрать обратную связь'));
+  vera.addTask(new Task('Отчёт по продажам', 'weekly', 3, 'ПН', vera, 'Собрать данные из CRM, подготовить графики'));
+  vera.addTask(new Task('Подготовка презентации', 'onetime', 6, '28.06.2026', vera, 'Для встречи с клиентом Петровым, нужны слайды по продукту'));
+  varvara.addTask(new Task('Анализ рынка', 'weekly', 4, 'ПН', varvara, 'Мониторинг конкурентов, обновление сводки'));
+  varvara.addTask(new Task('Обновление базы данных', 'onetime', 8, '27.06.2026', varvara, 'Перенести данные из Excel в новую CRM-систему'));
   saveData();
   checkNotifications();
 }
