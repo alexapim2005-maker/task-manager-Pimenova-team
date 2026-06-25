@@ -19,53 +19,17 @@ function setup() {
   canvas.parent('app-container');
   textFont('Arial');
   
-  var saved = localStorage.getItem('taskManagerData');
-  if (saved) {
-    try {
-      var data = JSON.parse(saved);
-      if (data && data.managers && data.managers.length > 0) {
-        managers = [];
-        var map = {};
-        for (var i = 0; i < data.managers.length; i++) {
-          var m = data.managers[i];
-          var mgr = new Manager(m.name);
-          map[m.name] = mgr;
-          managers.push(mgr);
-        }
-        for (var i = 0; i < data.managers.length; i++) {
-          var m = data.managers[i];
-          var mgr = map[m.name];
-          if (m.tasks) {
-            for (var j = 0; j < m.tasks.length; j++) {
-              var t = m.tasks[j];
-              if (t && t.title) {
-                var assignee = t.assigneeName ? map[t.assigneeName] : mgr;
-                var task = new Task(t.title, t.type||'weekly', t.hours||1, t.deadline||'ПН', assignee, t.description||'');
-                task.status = t.status || 'todo';
-                task.completedDate = t.completedDate || null;
-                mgr.tasks.push(task);
-              }
-            }
-          }
-        }
-      }
-    } catch(e) {}
-  }
-  
-  if (managers.length === 0) {
-    managers = [];
-    var a = new Manager('Александра Пименова (Руководитель)');
-    var v = new Manager('Вера Гусева (Менеджер)');
-    var va = new Manager('Варвара Андреева (Менеджер)');
-    managers.push(a, v, va);
-    a.addTask(new Task('Стратегическое планирование', 'weekly', 4, 'ПН', a, 'Определить цели на квартал'));
-    a.addTask(new Task('Совещание с командой', 'weekly', 2, 'СР', a, 'Обсудить результаты'));
-    v.addTask(new Task('Отчёт по продажам', 'weekly', 3, 'ПН', v, 'Собрать данные из CRM'));
-    v.addTask(new Task('Презентация для клиента', 'onetime', 6, '28.06.2026', v, 'Для встречи с Петровым'));
-    va.addTask(new Task('Анализ рынка', 'weekly', 4, 'ПН', va, 'Мониторинг конкурентов'));
-    va.addTask(new Task('Обновление базы', 'onetime', 8, '27.06.2026', va, 'Перенести данные в CRM'));
-    saveData();
-  }
+  managers = [];
+  var a = new Manager('Александра Пименова (Руководитель)');
+  var v = new Manager('Вера Гусева (Менеджер)');
+  var va = new Manager('Варвара Андреева (Менеджер)');
+  managers.push(a, v, va);
+  a.addTask(new Task('Стратегическое планирование', 'weekly', 4, 'ПН', a, 'Определить цели на квартал'));
+  a.addTask(new Task('Совещание с командой', 'weekly', 2, 'СР', a, 'Обсудить результаты'));
+  v.addTask(new Task('Отчёт по продажам', 'weekly', 3, 'ПН', v, 'Собрать данные из CRM'));
+  v.addTask(new Task('Презентация для клиента', 'onetime', 6, '28.06.2026', v, 'Для встречи с Петровым'));
+  va.addTask(new Task('Анализ рынка', 'weekly', 4, 'ПН', va, 'Мониторинг конкурентов'));
+  va.addTask(new Task('Обновление базы', 'onetime', 8, '27.06.2026', va, 'Перенести данные в CRM'));
   
   currentManager = managers[0];
   calendarManager = managers[0];
@@ -238,7 +202,7 @@ function drawCalendarView() {
 // ====== КЛАССЫ ======
 function Manager(name) { this.name = name; this.tasks = []; }
 Manager.prototype.addTask = function(t) { this.tasks.push(t); saveData(); checkNotifications(); };
-Manager.prototype.removeTask = function(t) { var i = this.tasks.indexOf(t); if(i>-1){this.tasks.splice(i,1);} };
+Manager.prototype.removeTask = function(t) { var i = this.tasks.indexOf(t); if(i>-1){this.tasks.splice(i,1); saveData();} };
 Manager.prototype.getWeeklyTasks = function() { return this.tasks.filter(function(t){return t.type==='weekly';}); };
 Manager.prototype.getMonthlyTasks = function() { return this.tasks.filter(function(t){return t.type==='monthly';}); };
 Manager.prototype.getOnetimeTasks = function() { return this.tasks.filter(function(t){return t.type==='onetime';}); };
@@ -277,33 +241,15 @@ function saveTaskFromForm() {
   var hoursEl = document.getElementById('task-hours');
   var deadlineEl = document.getElementById('task-deadline');
   var descEl = document.getElementById('task-description');
-  
   var t = titleEl.value.trim();
   var h = parseInt(hoursEl.value);
   var d = deadlineEl.value.trim();
   var desc = descEl ? descEl.value.trim() : '';
-  
   if (t && h && d && newTaskAssignee) {
     newTaskAssignee.addTask(new Task(t, newTaskType, h, d, newTaskAssignee, desc));
     titleEl.value = ''; hoursEl.value = ''; deadlineEl.value = '';
     if (descEl) descEl.value = '';
     hideForm();
-    saveData();
-  }
-}
-  
-  var t = titleEl.value.trim();
-  var h = parseInt(hoursEl.value);
-  var d = deadlineEl.value.trim();
-  var desc = descEl ? descEl.value.trim() : '';
-  
-  if (t && h && d && newTaskAssignee) {
-    newTaskAssignee.addTask(new Task(t, newTaskType, h, d, newTaskAssignee, desc));
-    titleEl.value = ''; hoursEl.value = ''; deadlineEl.value = '';
-    if (descEl) descEl.value = '';
-    hideForm();
-  } else {
-    alert('Не все поля: t=' + t + ' h=' + h + ' d=' + d + ' assignee=' + (newTaskAssignee ? newTaskAssignee.name : 'нет'));
   }
 }
 function showForm() { showAddForm=true; newTaskAssignee=currentManager; document.getElementById('add-form').classList.add('visible'); document.getElementById('overlay').classList.add('visible'); setType('weekly'); updateAssigneeButtons(); }
@@ -312,8 +258,7 @@ function hideForm() { showAddForm=false; document.getElementById('add-form').cla
 // ====== УВЕДОМЛЕНИЯ ======
 function checkNotifications() { notifications=[]; for(var i=0;i<managers.length;i++){var m=managers[i]; if(m.getWeeklyHours()>40) notifications.push({type:'overload',message:m.name+': перегруз '+m.getWeeklyHours().toFixed(1)+'ч'});} }
 
-// ====== КЛИКИ ======
-
+// ====== ДАННЫЕ ======
 function saveData() {
   try {
     var data = [];
@@ -336,7 +281,7 @@ function exportToXLS() {
   var blob=new Blob([xls],{type:'application/vnd.ms-excel'});var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='tasks.xls';a.click();
 }
 
-function mousePressed() {  // ← это уже есть, не трогай
+// ====== КЛИКИ ======
 function mousePressed() {
   if (mouseX > 1095 && mouseX < 1130 && mouseY > 10 && mouseY < 45) { showNotifications = !showNotifications; return; }
   if (showNotifications) {
@@ -368,14 +313,14 @@ function mousePressed() {
       for (var j=0;j<Math.min(active.length,5);j++) {
         var ty=226+j*34;
         if (mouseX>block.x+308&&mouseX<block.x+330&&mouseY>ty+6&&mouseY<ty+26){currentManager.removeTask(active[j]);return;}
-        if (mouseX>block.x+10&&mouseX<block.x+26&&mouseY>ty+6&&mouseY<ty+22){active[j].complete();checkNotifications();return;}
+        if (mouseX>block.x+10&&mouseX<block.x+26&&mouseY>ty+6&&mouseY<ty+22){active[j].complete();saveData();checkNotifications();return;}
       }
     }
     var completed=currentManager.getCompletedTasks();
     for (var k=0;k<Math.min(completed.length,4);k++) {
       var t=completed[k],ty=464+k*30;
       if (mouseX>335&&mouseX<360&&mouseY>ty+3&&mouseY<ty+23){currentManager.removeTask(t);return;}
-      if (mouseX>290&&mouseX<325&&mouseY>ty+3&&mouseY<ty+23){t.reopen();checkNotifications();return;}
+      if (mouseX>290&&mouseX<325&&mouseY>ty+3&&mouseY<ty+23){t.reopen();saveData();checkNotifications();return;}
     }
   }
 }
