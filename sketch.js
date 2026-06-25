@@ -19,17 +19,48 @@ function setup() {
   canvas.parent('app-container');
   textFont('Arial');
   
-  managers = [];
-  var a = new Manager('Александра Пименова (Руководитель)');
-  var v = new Manager('Вера Гусева (Менеджер)');
-  var va = new Manager('Варвара Андреева (Менеджер)');
-  managers.push(a, v, va);
-  a.addTask(new Task('Стратегическое планирование', 'weekly', 4, 'ПН', a, 'Определить цели на квартал'));
-  a.addTask(new Task('Совещание с командой', 'weekly', 2, 'СР', a, 'Обсудить результаты'));
-  v.addTask(new Task('Отчёт по продажам', 'weekly', 3, 'ПН', v, 'Собрать данные из CRM'));
-  v.addTask(new Task('Презентация для клиента', 'onetime', 6, '28.06.2026', v, 'Для встречи с Петровым'));
-  va.addTask(new Task('Анализ рынка', 'weekly', 4, 'ПН', va, 'Мониторинг конкурентов'));
-  va.addTask(new Task('Обновление базы', 'onetime', 8, '27.06.2026', va, 'Перенести данные в CRM'));
+  // Пробуем загрузить сохранённые данные
+  var saved = localStorage.getItem('taskManagerData');
+  if (saved) {
+    try {
+      var data = JSON.parse(saved);
+      managers = [];
+      var map = {};
+      for (var i = 0; i < data.managers.length; i++) {
+        var mgr = new Manager(data.managers[i].name);
+        map[data.managers[i].name] = mgr;
+        managers.push(mgr);
+      }
+      for (var i = 0; i < data.managers.length; i++) {
+        var m = data.managers[i];
+        var mgr = map[m.name];
+        for (var j = 0; j < m.tasks.length; j++) {
+          var t = m.tasks[j];
+          var assignee = t.assigneeName ? map[t.assigneeName] : mgr;
+          var task = new Task(t.title, t.type, t.hours, t.deadline, assignee, t.description||'');
+          task.status = t.status;
+          task.completedDate = t.completedDate;
+          mgr.tasks.push(task);
+        }
+      }
+    } catch(e) {}
+  }
+  
+  // Если данных нет — создаём тестовые
+  if (managers.length === 0) {
+    managers = [];
+    var a = new Manager('Александра Пименова (Руководитель)');
+    var v = new Manager('Вера Гусева (Менеджер)');
+    var va = new Manager('Варвара Андреева (Менеджер)');
+    managers.push(a, v, va);
+    a.addTask(new Task('Стратегическое планирование', 'weekly', 4, 'ПН', a, 'Определить цели на квартал'));
+    a.addTask(new Task('Совещание с командой', 'weekly', 2, 'СР', a, 'Обсудить результаты'));
+    v.addTask(new Task('Отчёт по продажам', 'weekly', 3, 'ПН', v, 'Собрать данные из CRM'));
+    v.addTask(new Task('Презентация для клиента', 'onetime', 6, '28.06.2026', v, 'Для встречи с Петровым'));
+    va.addTask(new Task('Анализ рынка', 'weekly', 4, 'ПН', va, 'Мониторинг конкурентов'));
+    va.addTask(new Task('Обновление базы', 'onetime', 8, '27.06.2026', va, 'Перенести данные в CRM'));
+    saveData();
+  }
   
   currentManager = managers[0];
   calendarManager = managers[0];
@@ -37,7 +68,6 @@ function setup() {
   updateAssigneeButtons();
   checkNotifications();
 }
-
 function draw() {
   background(colors.bg);
   drawHeader();
