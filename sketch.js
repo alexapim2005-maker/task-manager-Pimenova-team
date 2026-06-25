@@ -222,7 +222,7 @@ function drawManagerSelector() {
     textSize(11);
     textAlign(CENTER);
     let displayName = managers[i].name.split('(')[0].trim();
-    if (isBoss) displayName = '👑 ' + displayName;
+    if (isBoss) displayName = displayName;
     text(displayName, btnX + btnW/2, y + 20);
     textAlign(LEFT);
   }
