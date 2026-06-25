@@ -139,8 +139,6 @@ function drawViewTabs() {
   }
   fill(colors.ok); noStroke(); rect(480, 88, 130, 32, 7);
   fill('#fff'); textSize(13); textAlign(CENTER); text('📥 Экспорт', 545, 109); textAlign(LEFT);
-  fill('#0984e3'); noStroke(); rect(620, 88, 130, 32, 7);
-  fill('#fff'); textSize(13); textAlign(CENTER); text('💾 Сохранить', 685, 109); textAlign(LEFT);
 }
 
 function drawPersonalView() {
@@ -362,7 +360,6 @@ function mousePressed() {
     if (mouseX > 320 && mouseX < 460) { activeView = 'calendar'; hideForm(); return; }
     if (mouseX > 480 && mouseX < 610) { exportToXLS(); return; }
     // Кнопка "Сохранить" в шапке
-    if (mouseX > 620 && mouseX < 750) { saveData(); return; }
   }
   if (activeView === 'calendar') {
     for (var i = 0; i < managers.length; i++) {
