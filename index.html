@@ -85,7 +85,33 @@
             <span style="color:#636e72; font-size:12px;">Ответственный:</span>
             <div id="assignee-btns" style="display:inline-block;"></div>
             <br><br>
-            <button class="save-btn" onclick="saveTaskFromForm()">💾 Сохранить</button>
+            <button class="save-btn" onclick="function saveTaskFromForm() {
+  console.log('SAVE CLICKED!');
+  alert('Кнопка работает!');
+  
+  let titleInput = document.getElementById('task-title');
+  let hoursInput = document.getElementById('task-hours');
+  let deadlineInput = document.getElementById('task-deadline');
+  let descInput = document.getElementById('task-description');
+  
+  let t = titleInput ? titleInput.value.trim() : '';
+  let h = hoursInput ? parseInt(hoursInput.value) : 0;
+  let d = deadlineInput ? deadlineInput.value.trim() : '';
+  let desc = descInput ? descInput.value.trim() : '';
+  
+  if (t && h && d && newTaskAssignee) {
+    let task = new Task(t, newTaskType, h, d, newTaskAssignee, desc);
+    newTaskAssignee.addTask(task);
+    titleInput.value = '';
+    hoursInput.value = '';
+    deadlineInput.value = '';
+    if (descInput) descInput.value = '';
+    hideForm();
+    alert('Задача добавлена!');
+  } else {
+    alert('Заполните все поля!');
+  }
+}
             <button class="cancel-btn" onclick="hideForm()">✕ Отмена</button>
         </div>
         <div id="description-tooltip"></div>
