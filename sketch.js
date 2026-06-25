@@ -343,15 +343,8 @@ function exportToXLS() {
 
 // ====== КЛИКИ ======
 function mousePressed() {
-  if(mouseX>1095&&mouseX<1130&&mouseY>10&&mouseY<45){showNotifications=!showNotifications;return;}
-  if(showNotifications){if(mouseX<900||mouseX>1160||mouseY<55||mouseY>275)showNotifications=false;if(mouseX>915&&mouseX<1145&&mouseY>235&&mouseY<260){notifications=[];showNotifications=false;}return;}
-  if(mouseY>88&&mouseY<120){
-    if(mouseX>30&&mouseX<170){activeView='personal';hideForm();return;}
-    if(mouseX>175&&mouseX<315){activeView='team';hideForm();return;}
-    if(mouseX>320&&mouseX<460){activeView='calendar';hideForm();return;}
-    if(mouseX>480&&mouseX<610){exportToXLS();return;}
-    if(mouseX>620&&mouseX<750){alert('Кнопка Сохранить в шапке нажата!');saveData();return;}
-  }
+  alert('Клик! X=' + mouseX + ' Y=' + mouseY);
+}
   if(activeView==='calendar'){for(var i=0;i<managers.length;i++){if(mouseX>280+i*200&&mouseX<460+i*200&&mouseY>150&&mouseY<176)calendarManager=managers[i];}return;}
   if(activeView==='team')return;
   for(var i=0;i<managers.length;i++){if(mouseX>120+i*180&&mouseX<285+i*180&&mouseY>136&&mouseY<164){currentManager=managers[i];hideForm();}}
