@@ -13,12 +13,18 @@
         #app-container { position: relative; }
         canvas { border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
         
-       #add-form {
-    display: none; position: fixed; top: 50%; left: 50%;
-    transform: translate(-50%, -50%);
-    background: #fff; border: 2px solid #636e72; border-radius: 12px;
-    padding: 20px; width: 740px; z-index: 9999; box-shadow: 0 8px 30px rgba(0,0,0,0.5);
-}
+        #overlay {
+            display: none; position: fixed; top: 0; left: 0;
+            width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9998;
+        }
+        #overlay.visible { display: block; }
+        
+        #add-form {
+            display: none; position: fixed; top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            background: #fff; border: 2px solid #636e72; border-radius: 12px;
+            padding: 20px; width: 740px; z-index: 9999; box-shadow: 0 8px 30px rgba(0,0,0,0.5);
+        }
         #add-form.visible { display: block; }
         #add-form h3 { margin: 0 0 12px 0; color: #2d3436; }
         #add-form input, #add-form textarea {
@@ -54,23 +60,15 @@
         }
         
         #description-tooltip {
-            display: none; position: absolute; background: #2d3436; color: #fff;
+            display: none; position: fixed; background: #2d3436; color: #fff;
             padding: 10px 14px; border-radius: 8px; font-size: 12px;
-            max-width: 280px; z-index: 20; pointer-events: none;
+            max-width: 280px; z-index: 10000; pointer-events: none;
         }
-
-        #overlay {
-    display: none; position: fixed; top: 0; left: 0;
-    width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9998;
-}
-#overlay.visible { display: block; }
-        
     </style>
 </head>
 <body>
     <div id="app-container">
         <div id="overlay" onclick="hideForm()"></div>
-        <!-- Форма добавления -->
         <div id="add-form">
             <h3>Новая задача</h3>
             <input type="text" id="task-title" placeholder="Название задачи...">
