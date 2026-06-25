@@ -897,39 +897,55 @@ function loadOrCreateData() {
   let saved = localStorage.getItem('taskManagerData');
   
   if (saved) {
-    // Пробуем загрузить сохранённые данные
-    let data = JSON.parse(saved);
-    managers = [];
-    let managerMap = {};
-    
-    for (let m of data.managers) {
-      let manager = new Manager(m.name);
-      managerMap[m.name] = manager;
-      managers.push(manager);
-    }
-    
-    for (let m of data.managers) {
-      let manager = managerMap[m.name];
-      for (let t of m.tasks) {
-        let assignee = t.assigneeName ? managerMap[t.assigneeName] : manager;
-        let task = new Task(t.title, t.type, t.hours, t.deadline, assignee, t.description || '');
-        task.status = t.status;
-        task.completedDate = t.completedDate || null;
-        manager.tasks.push(task);
+    try {
+      let data = JSON.parse(saved);
+      
+      // Проверяем, что data и data.managers существуют
+      if (data && data.managers && Array.isArray(data.managers) && data.managers.length > 0) {
+        managers = [];
+        let managerMap = {};
+        
+        for (let m of data.managers) {
+          if (m && m.name) {
+            let manager = new Manager(m.name);
+            managerMap[m.name] = manager;
+            managers.push(manager);
+          }
+        }
+        
+        for (let m of data.managers) {
+          let manager = managerMap[m.name];
+          if (manager && m.tasks && Array.isArray(m.tasks)) {
+            for (let t of m.tasks) {
+              if (t && t.title) {
+                let assignee = t.assigneeName ? managerMap[t.assigneeName] : manager;
+                let task = new Task(t.title, t.type || 'weekly', t.hours || 1, t.deadline || 'ПН', assignee, t.description || '');
+                task.status = t.status || 'todo';
+                task.completedDate = t.completedDate || null;
+                manager.tasks.push(task);
+              }
+            }
+          }
+        }
+        
+        // Проверяем, что данные загрузились корректно
+        if (managers.length > 0 && managers[0].name && managers[0].name.includes('Пименова')) {
+          console.log('✅ Данные загружены из localStorage');
+          checkNotifications();
+          return;
+        }
       }
+    } catch (e) {
+      console.log('⚠️ Ошибка при загрузке данных: ' + e.message);
     }
-    
-    // Проверяем, что данные загрузились корректно
-    if (managers.length === 0 || !managers[0].name.includes('Пименова')) {
-      createTestData();
-    }
-  } else {
-    // Если данных нет — создаём новые
-    createTestData();
   }
   
+  // Если что-то пошло не так — создаём новые данные
+  console.log('📝 Создаю новые данные...');
+  createTestData();
   checkNotifications();
 }
+
 function createTestData() {
   console.log('Создаю тестовые данные...');
   
@@ -952,5 +968,5 @@ function createTestData() {
   varvara.addTask(new Task('Обновление базы данных', 'onetime', 8, '27.06.2026', varvara, 'Перенести данные из Excel в новую CRM'));
   
   saveData();
-  console.log('Тестовые данные созданы. Менеджеров: ' + managers.length);
+  console.log('✅ Тестовые данные созданы. Менеджеров: ' + managers.length);
 }
