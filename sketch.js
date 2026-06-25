@@ -331,17 +331,43 @@ function setType(type) {
   for (let b of document.getElementsByClassName('type-btn')) { b.classList.remove('active'); if(b.classList.contains(type)) b.classList.add('active'); }
 }
 function saveTaskFromForm() {
-  let t = document.getElementById('task-title').value;
-  let h = parseInt(document.getElementById('task-hours').value);
-  let d = document.getElementById('task-deadline').value;
-  let desc = document.getElementById('task-description').value;
+  console.log('Кнопка сохранить нажата!');
+  
+  let titleInput = document.getElementById('task-title');
+  let hoursInput = document.getElementById('task-hours');
+  let deadlineInput = document.getElementById('task-deadline');
+  let descInput = document.getElementById('task-description');
+  
+  if (!titleInput || !hoursInput || !deadlineInput) {
+    console.log('Ошибка: поля не найдены!');
+    return;
+  }
+  
+  let t = titleInput.value.trim();
+  let h = parseInt(hoursInput.value);
+  let d = deadlineInput.value.trim();
+  let desc = descInput ? descInput.value.trim() : '';
+  
+  console.log('Данные:', t, h, d, desc, 'Ответственный:', newTaskAssignee);
+  
   if (t && h && d && newTaskAssignee) {
-    newTaskAssignee.addTask(new Task(t, newTaskType, h, d, newTaskAssignee, desc));
-    document.getElementById('task-title').value = '';
-    document.getElementById('task-hours').value = '';
-    document.getElementById('task-deadline').value = '';
-    document.getElementById('task-description').value = '';
+    let task = new Task(t, newTaskType, h, d, newTaskAssignee, desc);
+    newTaskAssignee.addTask(task);
+    console.log('Задача добавлена!');
+    
+    // Очищаем поля
+    titleInput.value = '';
+    hoursInput.value = '';
+    deadlineInput.value = '';
+    if (descInput) descInput.value = '';
+    
     hideForm();
+  } else {
+    console.log('Не все поля заполнены!');
+    if (!t) console.log('Нет названия');
+    if (!h) console.log('Нет часов');
+    if (!d) console.log('Нет дедлайна');
+    if (!newTaskAssignee) console.log('Нет ответственного');
   }
 }
 function showForm() {
@@ -390,8 +416,17 @@ function mousePressed() {
     if (mouseX > 175 && mouseX < 315) { activeView = 'team'; hideForm(); return; }
     if (mouseX > 320 && mouseX < 460) { activeView = 'calendar'; hideForm(); return; }
     if (mouseX > 480 && mouseX < 610) { exportToXLS(); return; }
-    if (mouseX > 620 && mouseX < 750) { saveData(); return; }
-  }
+   if (mouseX > 620 && mouseX < 750) { 
+  saveData(); 
+  console.log('Данные сохранены!');
+  // Покажем уведомление на 2 секунды
+  notifications.push({ type: 'save', message: '✅ Данные сохранены!' });
+  setTimeout(function(){
+    let idx = notifications.findIndex(n => n.type === 'save');
+    if (idx > -1) notifications.splice(idx, 1);
+  }, 2000);
+  return; 
+}
   if (activeView === 'calendar') {
     for (let i = 0; i < managers.length; i++) { if (mouseX > 280+i*200 && mouseX < 460+i*200 && mouseY > 150 && mouseY < 176) calendarManager = managers[i]; }
     return;
