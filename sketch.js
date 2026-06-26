@@ -1,3 +1,18 @@
+// ====== FIREBASE ======
+const firebaseConfig = {
+  apiKey: "AIzaSyDW3bm7Kb5Sv3KHQFEq-LxBWmYo3O9rGUk",
+  authDomain: "team-tasks-30813.firebaseapp.com",
+  databaseURL: "https://team-tasks-30813-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "team-tasks-30813",
+  storageBucket: "team-tasks-30813.firebasestorage.app",
+  messagingSenderId: "591079444769",
+  appId: "1:591079444769:web:f18a3330f267a3bf572e60"
+};
+
+firebase.initializeApp(firebaseConfig);
+var database = firebase.database();
+var dataRef = database.ref('managers');
+
 var managers = [];
 var currentManager = null;
 var activeView = 'personal';
@@ -7,6 +22,7 @@ var showNotifications = false;
 var showAddForm = false;
 var newTaskType = 'weekly';
 var newTaskAssignee = null;
+var dataLoaded = false;
 
 var colors = {
   bg: '#f5f6fa', card: '#ffffff', weekly: '#6c5ce7', monthly: '#e17055',
@@ -19,57 +35,65 @@ function setup() {
   canvas.parent('app-container');
   textFont('Arial');
   
-  // Загружаем данные
-  var saved = localStorage.getItem('taskManagerData');
-  if (saved) {
-    try {
-      var data = JSON.parse(saved);
-      if (data && data.length > 0) {
-        managers = [];
-        var map = {};
-        for (var i = 0; i < data.length; i++) {
-          var mgr = new Manager(data[i].name);
-          map[data[i].name] = mgr;
-          managers.push(mgr);
-        }
-        for (var i = 0; i < data.length; i++) {
-          var m = data[i];
-          var mgr = map[m.name];
-          for (var j = 0; j < m.tasks.length; j++) {
-            var t = m.tasks[j];
-            var assignee = t.assigneeName ? map[t.assigneeName] : mgr;
-            var task = new Task(t.title, t.type, t.hours, t.deadline, assignee, t.description||'');
-            task.status = t.status || 'todo';
-            task.completedDate = t.completedDate || null;
-            mgr.tasks.push(task);
-          }
+  // Загружаем данные из Firebase
+  dataRef.on('value', function(snapshot) {
+    var data = snapshot.val();
+    if (data) {
+      managers = [];
+      var map = {};
+      for (var i = 0; i < data.length; i++) {
+        var mgr = new Manager(data[i].name);
+        map[data[i].name] = mgr;
+        managers.push(mgr);
+      }
+      for (var i = 0; i < data.length; i++) {
+        var m = data[i];
+        var mgr = map[m.name];
+        for (var j = 0; j < m.tasks.length; j++) {
+          var t = m.tasks[j];
+          var assignee = t.assigneeName ? map[t.assigneeName] : mgr;
+          var task = new Task(t.title, t.type, t.hours, t.deadline, assignee, t.description||'');
+          task.status = t.status || 'todo';
+          task.completedDate = t.completedDate || null;
+          mgr.tasks.push(task);
         }
       }
-    } catch(e) {}
-  }
-  
-  if (managers.length === 0) {
-    managers = [];
-    var a = new Manager('Александра Пименова (Руководитель)');
-    var v = new Manager('Вера Гусева (Менеджер)');
-    var va = new Manager('Варвара Андреева (Менеджер)');
-    managers.push(a, v, va);
-    a.addTask(new Task('Стратегическое планирование', 'weekly', 4, 'ПН', a, 'Определить цели на квартал'));
-    a.addTask(new Task('Совещание с командой', 'weekly', 2, 'СР', a, 'Обсудить результаты'));
-    v.addTask(new Task('Отчёт по продажам', 'weekly', 3, 'ПН', v, 'Собрать данные из CRM'));
-    v.addTask(new Task('Презентация для клиента', 'onetime', 6, '28.06.2026', v, 'Для встречи с Петровым'));
-    va.addTask(new Task('Анализ рынка', 'weekly', 4, 'ПН', va, 'Мониторинг конкурентов'));
-    va.addTask(new Task('Обновление базы', 'onetime', 8, '27.06.2026', va, 'Перенести данные в CRM'));
-  }
-  
-  currentManager = managers[0];
-  calendarManager = managers[0];
-  newTaskAssignee = currentManager;
-  updateAssigneeButtons();
-  checkNotifications();
+    } else {
+      createTestData();
+    }
+    
+    if (!dataLoaded) {
+      dataLoaded = true;
+      currentManager = managers[0];
+      calendarManager = managers[0];
+      newTaskAssignee = currentManager;
+      updateAssigneeButtons();
+    }
+    checkNotifications();
+  });
+}
+
+function createTestData() {
+  managers = [];
+  var a = new Manager('Александра Пименова (Руководитель)');
+  var v = new Manager('Вера Гусева (Менеджер)');
+  var va = new Manager('Варвара Андреева (Менеджер)');
+  managers.push(a, v, va);
+  a.addTask(new Task('Стратегическое планирование', 'weekly', 4, 'ПН', a, 'Определить цели на квартал'));
+  a.addTask(new Task('Совещание с командой', 'weekly', 2, 'СР', a, 'Обсудить результаты'));
+  v.addTask(new Task('Отчёт по продажам', 'weekly', 3, 'ПН', v, 'Собрать данные из CRM'));
+  v.addTask(new Task('Презентация для клиента', 'onetime', 6, '28.06.2026', v, 'Для встречи с Петровым'));
+  va.addTask(new Task('Анализ рынка', 'weekly', 4, 'ПН', va, 'Мониторинг конкурентов'));
+  va.addTask(new Task('Обновление базы', 'onetime', 8, '27.06.2026', va, 'Перенести данные в CRM'));
+  saveData();
 }
 
 function draw() {
+  if (!dataLoaded) {
+    background(colors.bg);
+    fill(colors.text); textSize(20); textAlign(CENTER); text('Загрузка данных...', 600, 400); textAlign(LEFT);
+    return;
+  }
   background(colors.bg);
   drawHeader();
   drawViewTabs();
@@ -114,8 +138,6 @@ function drawViewTabs() {
     fill(activeView === t.id ? colors.accent : '#dfe6e9'); noStroke(); rect(t.x, 88, 140, 32, 7);
     fill(activeView === t.id ? '#fff' : colors.text); textSize(13); textAlign(CENTER); text(t.label, t.x+70, 109); textAlign(LEFT);
   }
-  fill(colors.ok); noStroke(); rect(480, 88, 130, 32, 7);
-  fill('#fff'); textSize(13); textAlign(CENTER); text('📥 Экспорт', 545, 109); textAlign(LEFT);
 }
 
 function drawPersonalView() {
@@ -283,11 +305,9 @@ function saveTaskFromForm() {
 }
 function showForm() { showAddForm=true; newTaskAssignee=currentManager; document.getElementById('add-form').classList.add('visible'); document.getElementById('overlay').classList.add('visible'); setType('weekly'); updateAssigneeButtons(); }
 function hideForm() { showAddForm=false; document.getElementById('add-form').classList.remove('visible'); document.getElementById('overlay').classList.remove('visible'); }
-
-// ====== УВЕДОМЛЕНИЯ ======
 function checkNotifications() { notifications=[]; for(var i=0;i<managers.length;i++){var m=managers[i]; if(m.getWeeklyHours()>40) notifications.push({type:'overload',message:m.name+': перегруз '+m.getWeeklyHours().toFixed(1)+'ч'});} }
 
-// ====== ДАННЫЕ ======
+// ====== ДАННЫЕ (Firebase) ======
 function saveData() {
   try {
     var data = [];
@@ -305,12 +325,13 @@ function saveData() {
       }
       data.push({ name: m.name, tasks: tasksData });
     }
-    localStorage.setItem('taskManagerData', JSON.stringify(data));
+    dataRef.set(data);
   } catch(e) {}
 }
 
 // ====== КЛИКИ ======
 function mousePressed() {
+  if (!dataLoaded) return;
   if (mouseX > 1095 && mouseX < 1130 && mouseY > 10 && mouseY < 45) { showNotifications = !showNotifications; return; }
   if (showNotifications) {
     if (mouseX < 900 || mouseX > 1160 || mouseY < 55 || mouseY > 275) showNotifications = false;
