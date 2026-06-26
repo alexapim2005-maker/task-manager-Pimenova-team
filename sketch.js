@@ -37,43 +37,7 @@ function setup() {
   updateAssigneeButtons();
   checkNotifications();
 }
-      for (var i = 0; i < data.managers.length; i++) {
-        var m = data.managers[i];
-        var mgr = map[m.name];
-        for (var j = 0; j < m.tasks.length; j++) {
-          var t = m.tasks[j];
-          var assignee = t.assigneeName ? map[t.assigneeName] : mgr;
-          var task = new Task(t.title, t.type, t.hours, t.deadline, assignee, t.description||'');
-          task.status = t.status;
-          task.completedDate = t.completedDate;
-          mgr.tasks.push(task);
-        }
-      }
-    } catch(e) {}
-  }
-  
-  // Если данных нет — создаём тестовые
-  if (managers.length === 0) {
-    managers = [];
-    var a = new Manager('Александра Пименова (Руководитель)');
-    var v = new Manager('Вера Гусева (Менеджер)');
-    var va = new Manager('Варвара Андреева (Менеджер)');
-    managers.push(a, v, va);
-    a.addTask(new Task('Стратегическое планирование', 'weekly', 4, 'ПН', a, 'Определить цели на квартал'));
-    a.addTask(new Task('Совещание с командой', 'weekly', 2, 'СР', a, 'Обсудить результаты'));
-    v.addTask(new Task('Отчёт по продажам', 'weekly', 3, 'ПН', v, 'Собрать данные из CRM'));
-    v.addTask(new Task('Презентация для клиента', 'onetime', 6, '28.06.2026', v, 'Для встречи с Петровым'));
-    va.addTask(new Task('Анализ рынка', 'weekly', 4, 'ПН', va, 'Мониторинг конкурентов'));
-    va.addTask(new Task('Обновление базы', 'onetime', 8, '27.06.2026', va, 'Перенести данные в CRM'));
-    saveData();
-  }
-  
-  currentManager = managers[0];
-  calendarManager = managers[0];
-  newTaskAssignee = currentManager;
-  updateAssigneeButtons();
-  checkNotifications();
-}
+
 function draw() {
   background(colors.bg);
   drawHeader();
@@ -235,10 +199,9 @@ function drawCalendarView() {
   }
 }
 
-// ====== КЛАССЫ ======
 function Manager(name) { this.name = name; this.tasks = []; }
-Manager.prototype.addTask = function(t) { this.tasks.push(t); saveData(); checkNotifications(); };
-Manager.prototype.removeTask = function(t) { var i = this.tasks.indexOf(t); if(i>-1){this.tasks.splice(i,1); saveData();} };
+Manager.prototype.addTask = function(t) { this.tasks.push(t); };
+Manager.prototype.removeTask = function(t) { var i = this.tasks.indexOf(t); if(i>-1) this.tasks.splice(i,1); };
 Manager.prototype.getWeeklyTasks = function() { return this.tasks.filter(function(t){return t.type==='weekly';}); };
 Manager.prototype.getMonthlyTasks = function() { return this.tasks.filter(function(t){return t.type==='monthly';}); };
 Manager.prototype.getOnetimeTasks = function() { return this.tasks.filter(function(t){return t.type==='onetime';}); };
@@ -262,7 +225,6 @@ Task.prototype.complete = function() {
 };
 Task.prototype.reopen = function() { this.status = 'todo'; this.completedDate = null; };
 
-// ====== ФОРМА ======
 function updateAssigneeButtons() {
   var c = document.getElementById('assignee-btns'); if(!c)return; c.innerHTML = '';
   for (var i=0;i<managers.length;i++) {
@@ -273,51 +235,23 @@ function updateAssigneeButtons() {
 }
 function setType(type) { newTaskType=type; var bs=document.getElementsByClassName('type-btn'); for(var i=0;i<bs.length;i++){bs[i].classList.remove('active');if(bs[i].classList.contains(type))bs[i].classList.add('active');} }
 function saveTaskFromForm() {
-  var titleEl = document.getElementById('task-title');
-  var hoursEl = document.getElementById('task-hours');
-  var deadlineEl = document.getElementById('task-deadline');
-  var descEl = document.getElementById('task-description');
-  var t = titleEl.value.trim();
-  var h = parseInt(hoursEl.value);
-  var d = deadlineEl.value.trim();
-  var desc = descEl ? descEl.value.trim() : '';
+  var t = document.getElementById('task-title').value.trim();
+  var h = parseInt(document.getElementById('task-hours').value);
+  var d = document.getElementById('task-deadline').value.trim();
+  var desc = document.getElementById('task-description').value.trim();
   if (t && h && d && newTaskAssignee) {
     newTaskAssignee.addTask(new Task(t, newTaskType, h, d, newTaskAssignee, desc));
-    titleEl.value = ''; hoursEl.value = ''; deadlineEl.value = '';
-    if (descEl) descEl.value = '';
+    document.getElementById('task-title').value = '';
+    document.getElementById('task-hours').value = '';
+    document.getElementById('task-deadline').value = '';
+    document.getElementById('task-description').value = '';
     hideForm();
   }
 }
 function showForm() { showAddForm=true; newTaskAssignee=currentManager; document.getElementById('add-form').classList.add('visible'); document.getElementById('overlay').classList.add('visible'); setType('weekly'); updateAssigneeButtons(); }
 function hideForm() { showAddForm=false; document.getElementById('add-form').classList.remove('visible'); document.getElementById('overlay').classList.remove('visible'); }
-
-// ====== УВЕДОМЛЕНИЯ ======
 function checkNotifications() { notifications=[]; for(var i=0;i<managers.length;i++){var m=managers[i]; if(m.getWeeklyHours()>40) notifications.push({type:'overload',message:m.name+': перегруз '+m.getWeeklyHours().toFixed(1)+'ч'});} }
 
-// ====== ДАННЫЕ ======
-function saveData() {
-  try {
-    var data = [];
-    for (var i=0;i<managers.length;i++) {
-      var m=managers[i]; var tasksData=[];
-      for (var j=0;j<m.tasks.length;j++) {
-        var t=m.tasks[j];
-        tasksData.push({title:t.title,type:t.type,hours:t.hours,deadline:t.deadline,description:t.description||'',status:t.status,completedDate:t.completedDate||null,assigneeName:t.assignee?t.assignee.name:null});
-      }
-      data.push({name:m.name,tasks:tasksData});
-    }
-    localStorage.setItem('taskManagerData',JSON.stringify(data));
-  } catch(e) {}
-}
-
-function exportToXLS() {
-  var xls='<?xml version="1.0"?><?mso-application progid="Excel.Sheet"?><Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"><Worksheet ss:Name="Задачи"><Table>';
-  for(var i=0;i<managers.length;i++){var m=managers[i];for(var j=0;j<m.tasks.length;j++){var t=m.tasks[j];xls+='<Row><Cell><Data ss:Type="String">'+m.name+'</Data></Cell><Cell><Data ss:Type="String">'+t.title+'</Data></Cell><Cell><Data ss:Type="String">'+(t.description||'')+'</Data></Cell><Cell><Data ss:Type="String">'+(t.type==='weekly'?'Еженедельная':t.type==='monthly'?'Ежемесячная':'Разовая')+'</Data></Cell><Cell><Data ss:Type="Number">'+t.hours+'</Data></Cell><Cell><Data ss:Type="String">'+t.deadline+'</Data></Cell><Cell><Data ss:Type="String">'+(t.status==='done'?'Выполнена':'В работе')+'</Data></Cell></Row>';}}
-  xls+='</Table></Worksheet></Workbook>';
-  var blob=new Blob([xls],{type:'application/vnd.ms-excel'});var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='tasks.xls';a.click();
-}
-
-// ====== КЛИКИ ======
 function mousePressed() {
   if (mouseX > 1095 && mouseX < 1130 && mouseY > 10 && mouseY < 45) { showNotifications = !showNotifications; return; }
   if (showNotifications) {
@@ -329,7 +263,6 @@ function mousePressed() {
     if (mouseX > 30 && mouseX < 170) { activeView = 'personal'; hideForm(); return; }
     if (mouseX > 175 && mouseX < 315) { activeView = 'team'; hideForm(); return; }
     if (mouseX > 320 && mouseX < 460) { activeView = 'calendar'; hideForm(); return; }
-    if (mouseX > 480 && mouseX < 610) { exportToXLS(); return; }
   }
   if (activeView === 'calendar') {
     for (var i = 0; i < managers.length; i++) {
@@ -349,14 +282,14 @@ function mousePressed() {
       for (var j=0;j<Math.min(active.length,5);j++) {
         var ty=226+j*34;
         if (mouseX>block.x+308&&mouseX<block.x+330&&mouseY>ty+6&&mouseY<ty+26){currentManager.removeTask(active[j]);return;}
-        if (mouseX>block.x+10&&mouseX<block.x+26&&mouseY>ty+6&&mouseY<ty+22){active[j].complete();saveData();checkNotifications();return;}
+        if (mouseX>block.x+10&&mouseX<block.x+26&&mouseY>ty+6&&mouseY<ty+22){active[j].complete();return;}
       }
     }
     var completed=currentManager.getCompletedTasks();
     for (var k=0;k<Math.min(completed.length,4);k++) {
       var t=completed[k],ty=464+k*30;
       if (mouseX>335&&mouseX<360&&mouseY>ty+3&&mouseY<ty+23){currentManager.removeTask(t);return;}
-      if (mouseX>290&&mouseX<325&&mouseY>ty+3&&mouseY<ty+23){t.reopen();saveData();checkNotifications();return;}
+      if (mouseX>290&&mouseX<325&&mouseY>ty+3&&mouseY<ty+23){t.reopen();return;}
     }
   }
 }
