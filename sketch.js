@@ -19,17 +19,55 @@ function setup() {
   canvas.parent('app-container');
   textFont('Arial');
   
-  managers = [];
-  var a = new Manager('Александра Пименова (Руководитель)');
-  var v = new Manager('Вера Гусева (Менеджер)');
-  var va = new Manager('Варвара Андреева (Менеджер)');
-  managers.push(a, v, va);
-  a.addTask(new Task('Стратегическое планирование', 'weekly', 4, 'ПН', a, 'Определить цели на квартал'));
-  a.addTask(new Task('Совещание с командой', 'weekly', 2, 'СР', a, 'Обсудить результаты'));
-  v.addTask(new Task('Отчёт по продажам', 'weekly', 3, 'ПН', v, 'Собрать данные из CRM'));
-  v.addTask(new Task('Презентация для клиента', 'onetime', 6, '28.06.2026', v, 'Для встречи с Петровым'));
-  va.addTask(new Task('Анализ рынка', 'weekly', 4, 'ПН', va, 'Мониторинг конкурентов'));
-  va.addTask(new Task('Обновление базы', 'onetime', 8, '27.06.2026', va, 'Перенести данные в CRM'));
+  // Пробуем загрузить сохранённые данные
+  var saved = localStorage.getItem('taskManagerData');
+  if (saved) {
+    try {
+      var data = JSON.parse(saved);
+      if (data && data.managers && data.managers.length > 0) {
+        managers = [];
+        var map = {};
+        for (var i = 0; i < data.managers.length; i++) {
+          var m = data.managers[i];
+          var mgr = new Manager(m.name);
+          map[m.name] = mgr;
+          managers.push(mgr);
+        }
+        for (var i = 0; i < data.managers.length; i++) {
+          var m = data.managers[i];
+          var mgr = map[m.name];
+          if (m.tasks) {
+            for (var j = 0; j < m.tasks.length; j++) {
+              var t = m.tasks[j];
+              if (t && t.title) {
+                var assignee = t.assigneeName ? map[t.assigneeName] : mgr;
+                var task = new Task(t.title, t.type, t.hours, t.deadline, assignee, t.description||'');
+                task.status = t.status || 'todo';
+                task.completedDate = t.completedDate || null;
+                mgr.tasks.push(task);
+              }
+            }
+          }
+        }
+      }
+    } catch(e) {}
+  }
+  
+  // Если данных нет — создаём тестовые
+  if (managers.length === 0) {
+    managers = [];
+    var a = new Manager('Александра Пименова (Руководитель)');
+    var v = new Manager('Вера Гусева (Менеджер)');
+    var va = new Manager('Варвара Андреева (Менеджер)');
+    managers.push(a, v, va);
+    a.addTask(new Task('Стратегическое планирование', 'weekly', 4, 'ПН', a, 'Определить цели на квартал'));
+    a.addTask(new Task('Совещание с командой', 'weekly', 2, 'СР', a, 'Обсудить результаты'));
+    v.addTask(new Task('Отчёт по продажам', 'weekly', 3, 'ПН', v, 'Собрать данные из CRM'));
+    v.addTask(new Task('Презентация для клиента', 'onetime', 6, '28.06.2026', v, 'Для встречи с Петровым'));
+    va.addTask(new Task('Анализ рынка', 'weekly', 4, 'ПН', va, 'Мониторинг конкурентов'));
+    va.addTask(new Task('Обновление базы', 'onetime', 8, '27.06.2026', va, 'Перенести данные в CRM'));
+    saveData();
+  }
   
   currentManager = managers[0];
   calendarManager = managers[0];
@@ -201,7 +239,7 @@ function drawCalendarView() {
 
 function Manager(name) { this.name = name; this.tasks = []; }
 Manager.prototype.addTask = function(t) { this.tasks.push(t); };
-Manager.prototype.removeTask = function(t) { var i = this.tasks.indexOf(t); if(i>-1) this.tasks.splice(i,1); };
+Manager.prototype.removeTask = function(t) { var i = this.tasks.indexOf(t); if(i>-1) { this.tasks.splice(i,1); saveData(); } };
 Manager.prototype.getWeeklyTasks = function() { return this.tasks.filter(function(t){return t.type==='weekly';}); };
 Manager.prototype.getMonthlyTasks = function() { return this.tasks.filter(function(t){return t.type==='monthly';}); };
 Manager.prototype.getOnetimeTasks = function() { return this.tasks.filter(function(t){return t.type==='onetime';}); };
