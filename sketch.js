@@ -350,14 +350,14 @@ function mousePressed() {
       for (var j=0;j<Math.min(active.length,5);j++) {
         var ty=226+j*34;
         if (mouseX>block.x+308&&mouseX<block.x+330&&mouseY>ty+6&&mouseY<ty+26){currentManager.removeTask(active[j]);return;}
-        if (mouseX>block.x+10&&mouseX<block.x+26&&mouseY>ty+6&&mouseY<ty+22){active[j].complete();return;}
+        if (mouseX>block.x+10&&mouseX<block.x+26&&mouseY>ty+6&&mouseY<ty+22){active[j].complete();saveData();return;}
       }
     }
     var completed=currentManager.getCompletedTasks();
     for (var k=0;k<Math.min(completed.length,4);k++) {
       var t=completed[k],ty=464+k*30;
       if (mouseX>335&&mouseX<360&&mouseY>ty+3&&mouseY<ty+23){currentManager.removeTask(t);return;}
-      if (mouseX>290&&mouseX<325&&mouseY>ty+3&&mouseY<ty+23){t.reopen();return;}
+      if (mouseX>290&&mouseX<325&&mouseY>ty+3&&mouseY<ty+23){t.reopen();saveData();return;}
     }
   }
 }
