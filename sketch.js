@@ -238,7 +238,7 @@ function drawCalendarView() {
 }
 
 function Manager(name) { this.name = name; this.tasks = []; }
-Manager.prototype.addTask = function(t) { this.tasks.push(t); };
+Manager.prototype.addTask = function(t) { this.tasks.push(t); saveData(); };
 Manager.prototype.removeTask = function(t) { var i = this.tasks.indexOf(t); if(i>-1) { this.tasks.splice(i,1); saveData(); } };
 Manager.prototype.getWeeklyTasks = function() { return this.tasks.filter(function(t){return t.type==='weekly';}); };
 Manager.prototype.getMonthlyTasks = function() { return this.tasks.filter(function(t){return t.type==='monthly';}); };
