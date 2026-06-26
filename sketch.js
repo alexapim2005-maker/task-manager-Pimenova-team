@@ -41,16 +41,22 @@ function setup() {
     if (data) {
       managers = [];
       var map = {};
-      for (var i = 0; i < data.length; i++) {
-        var mgr = new Manager(data[i].name);
-        map[data[i].name] = mgr;
+      
+      // Преобразуем объект в массив
+      var keys = Object.keys(data);
+      for (var k = 0; k < keys.length; k++) {
+        var item = data[keys[k]];
+        var mgr = new Manager(item.name);
+        map[item.name] = mgr;
         managers.push(mgr);
       }
-      for (var i = 0; i < data.length; i++) {
-        var m = data[i];
-        var mgr = map[m.name];
-        for (var j = 0; j < m.tasks.length; j++) {
-          var t = m.tasks[j];
+      
+      for (var k = 0; k < keys.length; k++) {
+        var item = data[keys[k]];
+        var mgr = map[item.name];
+        var tasks = item.tasks || [];
+        for (var j = 0; j < tasks.length; j++) {
+          var t = tasks[j];
           var assignee = t.assigneeName ? map[t.assigneeName] : mgr;
           var task = new Task(t.title, t.type, t.hours, t.deadline, assignee, t.description||'');
           task.status = t.status || 'todo';
