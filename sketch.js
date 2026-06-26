@@ -235,10 +235,15 @@ function updateAssigneeButtons() {
 }
 function setType(type) { newTaskType=type; var bs=document.getElementsByClassName('type-btn'); for(var i=0;i<bs.length;i++){bs[i].classList.remove('active');if(bs[i].classList.contains(type))bs[i].classList.add('active');} }
 function saveTaskFromForm() {
+  alert('Нажата кнопка Сохранить!');
+  
   var t = document.getElementById('task-title').value.trim();
   var h = parseInt(document.getElementById('task-hours').value);
   var d = document.getElementById('task-deadline').value.trim();
   var desc = document.getElementById('task-description').value.trim();
+  
+  alert('Данные: ' + t + ' | часы: ' + h + ' | дедлайн: ' + d);
+  
   if (t && h && d && newTaskAssignee) {
     newTaskAssignee.addTask(new Task(t, newTaskType, h, d, newTaskAssignee, desc));
     document.getElementById('task-title').value = '';
@@ -246,6 +251,9 @@ function saveTaskFromForm() {
     document.getElementById('task-deadline').value = '';
     document.getElementById('task-description').value = '';
     hideForm();
+    alert('Задача добавлена!');
+  } else {
+    alert('Не все поля заполнены! t=' + t + ' h=' + h + ' d=' + d + ' assignee=' + (newTaskAssignee ? newTaskAssignee.name : 'нет'));
   }
 }
 function showForm() { showAddForm=true; newTaskAssignee=currentManager; document.getElementById('add-form').classList.add('visible'); document.getElementById('overlay').classList.add('visible'); setType('weekly'); updateAssigneeButtons(); }
