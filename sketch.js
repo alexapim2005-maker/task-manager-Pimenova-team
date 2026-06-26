@@ -251,6 +251,7 @@ function saveTaskFromForm() {
     document.getElementById('task-deadline').value = '';
     document.getElementById('task-description').value = '';
     hideForm();
+    saveData();
     alert('Задача добавлена!');
   } else {
     alert('Не все поля заполнены! t=' + t + ' h=' + h + ' d=' + d + ' assignee=' + (newTaskAssignee ? newTaskAssignee.name : 'нет'));
@@ -259,6 +260,27 @@ function saveTaskFromForm() {
 function showForm() { showAddForm=true; newTaskAssignee=currentManager; document.getElementById('add-form').classList.add('visible'); document.getElementById('overlay').classList.add('visible'); setType('weekly'); updateAssigneeButtons(); }
 function hideForm() { showAddForm=false; document.getElementById('add-form').classList.remove('visible'); document.getElementById('overlay').classList.remove('visible'); }
 function checkNotifications() { notifications=[]; for(var i=0;i<managers.length;i++){var m=managers[i]; if(m.getWeeklyHours()>40) notifications.push({type:'overload',message:m.name+': перегруз '+m.getWeeklyHours().toFixed(1)+'ч'});} }
+
+function saveData() {
+  try {
+    var data = [];
+    for (var i = 0; i < managers.length; i++) {
+      var m = managers[i];
+      var tasksData = [];
+      for (var j = 0; j < m.tasks.length; j++) {
+        var t = m.tasks[j];
+        tasksData.push({
+          title: t.title, type: t.type, hours: t.hours,
+          deadline: t.deadline, description: t.description || '',
+          status: t.status, completedDate: t.completedDate || null,
+          assigneeName: t.assignee ? t.assignee.name : null
+        });
+      }
+      data.push({ name: m.name, tasks: tasksData });
+    }
+    localStorage.setItem('taskManagerData', JSON.stringify(data));
+  } catch(e) {}
+}
 
 function mousePressed() {
   if (mouseX > 1095 && mouseX < 1130 && mouseY > 10 && mouseY < 45) { showNotifications = !showNotifications; return; }
