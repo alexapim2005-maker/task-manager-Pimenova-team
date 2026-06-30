@@ -261,99 +261,48 @@ function drawTeamView() {
 }
 
 function drawCalendarView() {
-  var x = 30, y = 150;
-  var today = new Date();
-  var currentMonth = today.getMonth();
-  var currentYear = today.getFullYear();
+  var y = 160;
+  fill(colors.text); textSize(20); textStyle(BOLD); text('📅 Календарь загрузки', 30, y); textStyle(NORMAL);
   
-  var monthNames = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
-  
-  fill(colors.text); textSize(20); textStyle(BOLD);
-  text('📅 Календарь — ' + monthNames[currentMonth] + ' ' + currentYear, x, y); textStyle(NORMAL);
-  y += 10;
-  
+  // Выбор сотрудника
   for (var i = 0; i < managers.length; i++) {
     var bx = 280 + i * 200;
-    fill(calendarManager === managers[i] ? colors.accent : '#dfe6e9'); noStroke();
-    rect(bx, y-10, 180, 26, 4);
-    fill(calendarManager === managers[i] ? '#fff' : colors.text); textSize(11); textAlign(CENTER);
-    text(managers[i].name.split('(')[0].trim(), bx+90, y+8); textAlign(LEFT);
+    fill(calendarManager === managers[i] ? colors.accent : '#dfe6e9'); noStroke(); rect(bx, y-10, 180, 26, 4);
+    fill(calendarManager === managers[i] ? '#fff' : colors.text); textSize(11); textAlign(CENTER); text(managers[i].name, bx+90, y+8); textAlign(LEFT);
   }
   
-  y += 30;
-  
-  var daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
-  var firstDay = new Date(currentYear, currentMonth, 1).getDay();
-  if (firstDay === 0) firstDay = 7;
+  y += 35;
   
   var days = ['ПН', 'ВТ', 'СР', 'ЧТ', 'ПТ', 'СБ', 'ВС'];
-  var cellW = 155, cellH = 100;
+  var cellW = 155, cellH = 130;
   
   for (var d = 0; d < 7; d++) {
-    fill(colors.accent); noStroke(); rect(x+d*cellW+d*5, y, cellW, 26, 4);
-    fill('#fff'); textSize(12); textStyle(BOLD); textAlign(CENTER); text(days[d], x+d*cellW+d*5+cellW/2, y+18); textAlign(LEFT); textStyle(NORMAL);
+    fill(colors.accent); noStroke(); rect(30+d*155+d*5, y, cellW, 26, 4);
+    fill('#fff'); textSize(12); textStyle(BOLD); textAlign(CENTER); text(days[d], 30+d*160+77, y+18); textAlign(LEFT); textStyle(NORMAL);
   }
   
   y += 30;
   
-  var dayNum = 1;
-  var maxWeeks = Math.ceil((daysInMonth + firstDay - 1) / 7);
-  
-  for (var w = 0; w < maxWeeks; w++) {
+  for (var w = 0; w < 4; w++) {
     for (var d = 0; d < 7; d++) {
-      var cx = x + d*cellW + d*5;
-      var cy = y + w*cellH + w*5;
-      
+      var cx = 30 + d*160;
+      var cy = y + w*135;
       fill('#fff'); stroke('#e0e0e0'); rect(cx, cy, cellW, cellH, 5);
-      
-      if ((w === 0 && d < firstDay - 1) || dayNum > daysInMonth) {
-        fill('#f0f0f0'); noStroke(); rect(cx+1, cy+1, cellW-2, cellH-2, 4);
-      } else {
-        noStroke();
-        fill(colors.text); textSize(13); textStyle(BOLD); text(dayNum, cx+10, cy+20); textStyle(NORMAL);
-        
-        var dateStr = String(dayNum).padStart(2,'0') + '.' + String(currentMonth+1).padStart(2,'0') + '.' + currentYear;
-        var dayTasks = getTasksByDate(calendarManager, dateStr);
-        
-        var taskY = cy + 30;
-        for (var t = 0; t < Math.min(dayTasks.length, 3); t++) {
-          var task = dayTasks[t];
-          var tc = task.type==='weekly'?colors.lightWeekly:task.type==='monthly'?colors.lightMonthly:colors.lightOnetime;
-          if (task.status === 'done') tc = colors.done;
-          fill(tc); noStroke(); rect(cx+5, taskY, cellW-10, 16, 3);
-          fill(colors.text); textSize(9);
-          var taskTitle = task.title.length > 12 ? task.title.substring(0,11)+'…' : task.title;
-          text(taskTitle, cx+8, taskY+12);
-          textAlign(RIGHT); text(task.hours+'ч', cx+cellW-8, taskY+12); textAlign(LEFT);
-          taskY += 19;
-        }
-        
-        if (dayTasks.length > 3) {
-          fill('#636e72'); textSize(9); text('+'+(dayTasks.length-3)+' ещё', cx+8, taskY);
-        }
-        
-        dayNum++;
-      }
+      noStroke(); fill(colors.text); textSize(12); textStyle(BOLD); text(w*7+d+1, cx+10, cy+18); textStyle(NORMAL);
     }
   }
   
-  y += maxWeeks * (cellH + 5) + 20;
+  y += 4*135 + 15;
   
-  fill(colors.text); textSize(16); textStyle(BOLD); text('📊 Нагрузка по дням', x, y); textStyle(NORMAL);
+  // Сводка по неделям
+  fill(colors.text); textSize(16); textStyle(BOLD); text('📊 Сводка по неделям — ' + calendarManager.name.split('(')[0].trim(), 30, y); textStyle(NORMAL);
   y += 20;
   
-  for (var i = 0; i < Math.min(7, daysInMonth); i++) {
-    var dateStr = String(i+1).padStart(2,'0') + '.' + String(currentMonth+1).padStart(2,'0') + '.' + currentYear;
-    var dayHours = getDayHoursByDate(calendarManager, dateStr);
-    var barW = 140;
-    var bx = x + i * 155;
-    
-    fill('#fff'); stroke('#e0e0e0'); rect(bx, y, barW, 40, 5);
-    fill(colors.text); textSize(10); textStyle(BOLD); text((i+1)+' число', bx+8, y+16); textStyle(NORMAL);
-    fill('#dfe6e9'); noStroke(); rect(bx+8, y+22, barW-16, 10, 5);
-    var lc = dayHours > 8 ? colors.danger : dayHours > 6 ? colors.warning : colors.ok;
-    fill(lc); rect(bx+8, y+22, (barW-16)*Math.min(dayHours/8, 1.5), 10, 5);
-    fill('#636e72'); textSize(9); textAlign(CENTER); text(dayHours+'ч', bx+barW/2, y+22); textAlign(LEFT);
+  for (var w = 0; w < 4; w++) {
+    var wx = 30 + w*270;
+    var wh = currentManager.getWeeklyHours();
+    fill('#fff'); stroke('#e0e0e0'); rect(wx, y, 255, 40, 6);
+    fill(colors.text); textSize(12); textStyle(BOLD); text('Неделя ' + (w+1) + ': ' + wh.toFixed(1) + ' / 40 часов', wx+15, y+25); textStyle(NORMAL);
   }
 }
 
