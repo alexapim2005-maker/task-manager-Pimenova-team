@@ -277,8 +277,30 @@ function drawCalendarView() {
     fill('#fff'); stroke('#e0e0e0'); rect(30+d*160, y+w*135, 155, 130, 5);
     noStroke(); fill(colors.text); textSize(12); textStyle(BOLD); text(w*7+d+1, 40+d*160, y+w*135+18); textStyle(NORMAL);
   }
+  
+  y += 4*135 + 15;
+  
+  // Сводка по неделям с реальной загрузкой
+  fill(colors.text); textSize(16); textStyle(BOLD); text('📊 Нагрузка по неделям — ' + calendarManager.name.split('(')[0].trim(), 30, y); textStyle(NORMAL);
+  y += 20;
+  
+  for (var w = 0; w < 4; w++) {
+    var wx = 30 + w * 270;
+    var weekHours = 0;
+    for (var d = 0; d < 7; d++) {
+      var dayNum = w * 7 + d + 1;
+      var dateStr = String(dayNum).padStart(2,'0') + '.07.2026';
+      weekHours += getDayHoursByDate(calendarManager, dateStr);
+    }
+    weekHours = Math.round(weekHours * 10) / 10;
+    var weekColor = weekHours > 40 ? colors.danger : weekHours > 35 ? colors.warning : colors.ok;
+    
+    fill('#fff'); stroke('#e0e0e0'); rect(wx, y, 255, 40, 6);
+    fill(colors.text); textSize(12); textStyle(BOLD); text('Неделя ' + (w+1) + ': ' + weekHours + ' / 40 часов', wx+15, y+17); textStyle(NORMAL);
+    fill('#dfe6e9'); noStroke(); rect(wx+15, y+24, 225, 10, 5);
+    fill(weekColor); rect(wx+15, y+24, 225 * Math.min(weekHours/40, 1.5), 10, 5);
+  }
 }
-
 // ====== КЛАССЫ ======
 function Manager(name) { this.name = name; this.tasks = []; }
 Manager.prototype.addTask = function(t) { this.tasks.push(t); saveData(); };
@@ -365,6 +387,27 @@ function saveData() {
     }
     dataRef.set(data);
   } catch(e) {}
+}
+
+function getTasksByDate(manager, dateStr) {
+  var tasks = [];
+  for (var i = 0; i < manager.tasks.length; i++) {
+    var t = manager.tasks[i];
+    var dl = t.deadline || '';
+    if (dl.indexOf(dateStr) !== -1) {
+      tasks.push(t);
+    }
+  }
+  return tasks;
+}
+
+function getDayHoursByDate(manager, dateStr) {
+  var tasks = getTasksByDate(manager, dateStr);
+  var hours = 0;
+  for (var i = 0; i < tasks.length; i++) {
+    if (tasks[i].status !== 'done') hours += tasks[i].hours;
+  }
+  return Math.round(hours * 10) / 10;
 }
 
 // ====== КЛИКИ ======
