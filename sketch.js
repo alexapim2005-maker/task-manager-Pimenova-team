@@ -30,7 +30,7 @@ var colors = {
   danger: '#d63031', warning: '#fdcb6e', ok: '#00b894', accent: '#0984e3'
 };
 
-function setup() {
+ffunction setup() {
   var canvas = createCanvas(1200, 850);
   canvas.parent('app-container');
   textFont('Arial');
@@ -78,7 +78,6 @@ function setup() {
     checkNotifications();
   });
 }
-
 function createTestData() {
   managers = [];
   var a = new Manager('Александра Пименова (Руководитель)');
