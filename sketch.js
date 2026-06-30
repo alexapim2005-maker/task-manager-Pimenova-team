@@ -259,30 +259,41 @@ function drawTeamView() {
 }
 
 function drawCalendarView() {
-  var y = 160;
-  fill(colors.text); textSize(20); textStyle(BOLD); text('📅 Календарь загрузки', 30, y); textStyle(NORMAL);
+  var y = 150;
+  fill(colors.text); textSize(18); textStyle(BOLD); text('📅 Календарь загрузки', 30, y); textStyle(NORMAL);
+  
+  // Выбор сотрудника
   for (var i = 0; i < managers.length; i++) {
-    var bx = 280 + i * 200;
-    fill(calendarManager === managers[i] ? colors.accent : '#dfe6e9'); noStroke(); rect(bx, y-10, 180, 26, 4);
-    fill(calendarManager === managers[i] ? '#fff' : colors.text); textSize(11); textAlign(CENTER); text(managers[i].name, bx+90, y+8); textAlign(LEFT);
+    var bx = 250 + i * 200;
+    fill(calendarManager === managers[i] ? colors.accent : '#dfe6e9'); noStroke(); rect(bx, y-10, 180, 24, 4);
+    fill(calendarManager === managers[i] ? '#fff' : colors.text); textSize(10); textAlign(CENTER); text(managers[i].name.split('(')[0].trim(), bx+90, y+7); textAlign(LEFT);
   }
-  y += 35;
+  
+  y += 25;
+  
+  // Дни недели
   var days = ['ПН', 'ВТ', 'СР', 'ЧТ', 'ПТ', 'СБ', 'ВС'];
+  var cellW = 155, cellH = 110;
   for (var d = 0; d < 7; d++) {
-    fill(colors.accent); noStroke(); rect(30+d*155+d*5, y, 155, 26, 4);
-    fill('#fff'); textSize(12); textStyle(BOLD); textAlign(CENTER); text(days[d], 30+d*160+77, y+18); textAlign(LEFT); textStyle(NORMAL);
-  }
-  y += 30;
-  for (var w = 0; w < 4; w++) for (var d = 0; d < 7; d++) {
-    fill('#fff'); stroke('#e0e0e0'); rect(30+d*160, y+w*135, 155, 130, 5);
-    noStroke(); fill(colors.text); textSize(12); textStyle(BOLD); text(w*7+d+1, 40+d*160, y+w*135+18); textStyle(NORMAL);
+    fill(colors.accent); noStroke(); rect(30+d*155+d*5, y, cellW, 22, 4);
+    fill('#fff'); textSize(11); textStyle(BOLD); textAlign(CENTER); text(days[d], 30+d*160+77, y+15); textAlign(LEFT); textStyle(NORMAL);
   }
   
-  y += 4*135 + 15;
+  y += 26;
   
-  // Сводка по неделям с реальной загрузкой
-  fill(colors.text); textSize(16); textStyle(BOLD); text('📊 Нагрузка по неделям — ' + calendarManager.name.split('(')[0].trim(), 30, y); textStyle(NORMAL);
-  y += 20;
+  // Сетка 4×7
+  for (var w = 0; w < 4; w++) {
+    for (var d = 0; d < 7; d++) {
+      fill('#fff'); stroke('#e0e0e0'); rect(30+d*160, y+w*cellH+w*3, cellW, cellH, 4);
+      noStroke(); fill(colors.text); textSize(12); textStyle(BOLD); text(w*7+d+1, 40+d*160, y+w*cellH+w*3+18); textStyle(NORMAL);
+    }
+  }
+  
+  y += 4*cellH + 4*3 + 10;
+  
+  // Нагрузка по неделям
+  fill(colors.text); textSize(14); textStyle(BOLD); text('📊 Нагрузка: ' + calendarManager.name.split('(')[0].trim(), 30, y); textStyle(NORMAL);
+  y += 15;
   
   for (var w = 0; w < 4; w++) {
     var wx = 30 + w * 270;
@@ -295,10 +306,10 @@ function drawCalendarView() {
     weekHours = Math.round(weekHours * 10) / 10;
     var weekColor = weekHours > 40 ? colors.danger : weekHours > 35 ? colors.warning : colors.ok;
     
-    fill('#fff'); stroke('#e0e0e0'); rect(wx, y, 255, 40, 6);
-    fill(colors.text); textSize(12); textStyle(BOLD); text('Неделя ' + (w+1) + ': ' + weekHours + ' / 40 часов', wx+15, y+17); textStyle(NORMAL);
-    fill('#dfe6e9'); noStroke(); rect(wx+15, y+24, 225, 10, 5);
-    fill(weekColor); rect(wx+15, y+24, 225 * Math.min(weekHours/40, 1.5), 10, 5);
+    fill('#fff'); stroke('#e0e0e0'); rect(wx, y, 255, 35, 5);
+    fill(colors.text); textSize(11); textStyle(BOLD); text('Нед ' + (w+1) + ': ' + weekHours + ' / 40ч', wx+10, y+15); textStyle(NORMAL);
+    fill('#dfe6e9'); noStroke(); rect(wx+10, y+22, 235, 8, 4);
+    fill(weekColor); rect(wx+10, y+22, 235 * Math.min(weekHours/40, 1.5), 8, 4);
   }
 }
 // ====== КЛАССЫ ======
