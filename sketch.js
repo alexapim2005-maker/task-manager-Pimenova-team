@@ -155,31 +155,48 @@ function drawPersonalView() {
   drawBlock('Еженедельные', currentManager.getWeeklyTasks(), 30, 180, colors.weekly);
   drawBlock('Ежемесячные', currentManager.getMonthlyTasks(), 380, 180, colors.monthly);
   drawBlock('Разовые', currentManager.getOnetimeTasks(), 730, 180, colors.onetime);
-  drawCompletedBlock(currentManager.getCompletedTasks(), 30, 420);
+  drawCompletedBlock(currentManager.getCompletedTasks(), 30, 440);
   drawStats();
-  fill('#00b894'); noStroke(); rect(850, 710, 200, 40, 20);
-  fill('#fff'); textSize(15); textAlign(CENTER); text('+ Новая задача', 950, 736); textAlign(LEFT);
+  fill('#00b894'); noStroke(); rect(850, 710, 200, 45, 22);
+  fill('#fff'); textSize(16); textStyle(BOLD); textAlign(CENTER); text('+ Новая задача', 950, 738); textAlign(LEFT); textStyle(NORMAL);
 }
 
 function drawBlock(title, tasks, x, y, color) {
   fill(color); noStroke(); rect(x, y, 340, 34, 7);
   fill('#fff'); textSize(14); textStyle(BOLD); text(title, x+12, y+23); textStyle(NORMAL);
-  fill('#fff'); stroke('#e0e0e0'); strokeWeight(1); rect(x, y+34, 340, 185, 0, 0, 7, 7);
+  
+  // Увеличим высоту блока для описаний
+  fill('#fff'); stroke('#e0e0e0'); strokeWeight(1); rect(x, y+34, 340, 220, 0, 0, 7, 7);
   var active = tasks.filter(function(t) { return t.status !== 'done'; });
   if (active.length === 0) { fill('#b2bec3'); noStroke(); textSize(12); text('Нет задач', x+12, y+60); return; }
-  for (var i = 0; i < Math.min(active.length, 10); i++) {
-    var t = active[i]; var ty = y + 46 + i * 34;
-    fill('#fff'); stroke('#b2bec3'); strokeWeight(2); rect(x+10, ty+6, 16, 16, 3); noStroke();
-    fill(colors.text); textSize(12); text(t.title, x+44, ty+11);
-    fill('#636e72'); textSize(9);
-    var an = t.assignee ? t.assignee.name.split('(')[0].trim() : '';
-    var info = t.hours + 'ч | ' + t.deadline + ' | ' + an;
-    if (t.description) {
-      info = info + ' | ' + t.description;
+  
+  for (var i = 0; i < Math.min(active.length, 6); i++) {
+    var t = active[i];
+    var hasDesc = t.description && t.description.length > 0;
+    var rowHeight = hasDesc ? 48 : 34;
+    var ty = y + 46;
+    for (var k = 0; k < i; k++) {
+      ty += (active[k].description && active[k].description.length > 0) ? 48 : 34;
     }
-    text(info, x+44, ty+25);
-    fill('#e74c3c'); noStroke(); rect(x+308, ty+6, 22, 20, 3);
-    fill('#fff'); textSize(14); textAlign(CENTER); text('×', x+319, ty+21); textAlign(LEFT);
+    
+    fill('#fff'); stroke('#b2bec3'); strokeWeight(2); rect(x+10, ty+4, 16, 16, 3); noStroke();
+    fill(colors.text); textSize(12); text(t.title, x+32, ty+14);
+    
+    var an = t.assignee ? t.assignee.name.split('(')[0].trim() : '';
+    fill('#636e72'); textSize(9);
+    text(t.hours + 'ч | ' + t.deadline + ' | ' + an, x+32, ty+26);
+    
+    // Описание на отдельной строке
+    if (hasDesc) {
+      fill('#636e72'); textSize(8); textStyle(ITALIC);
+      var descText = t.description;
+      if (descText.length > 40) descText = descText.substring(0, 38) + '…';
+      text(descText, x+32, ty+40);
+      textStyle(NORMAL);
+    }
+    
+    fill('#e74c3c'); noStroke(); rect(x+308, ty+2, 22, 20, 3);
+    fill('#fff'); textSize(14); textAlign(CENTER); text('×', x+319, ty+17); textAlign(LEFT);
   }
 }
 function drawCompletedBlock(tasks, x, y) {
@@ -202,17 +219,17 @@ function drawCompletedBlock(tasks, x, y) {
 }
 
 function drawStats() {
-  var y = 600;
-  fill('#fff'); stroke('#e0e0e0'); rect(30, y, 1040, 65, 7);
-  fill(colors.text); textSize(15); textStyle(BOLD); text('📊 Нагрузка: ' + currentManager.name, 48, y+25); textStyle(NORMAL);
+  var y = 630;
+  fill('#fff'); stroke('#e0e0e0'); rect(30, y, 1040, 55, 7);
+  fill(colors.text); textSize(15); textStyle(BOLD); text('📊 Нагрузка: ' + currentManager.name, 48, y+22); textStyle(NORMAL);
   var wh = currentManager.getWeeklyHours(), mh = currentManager.getMonthlyHours();
-  fill('#636e72'); textSize(11); text('Неделя: ' + wh + ' / 40ч', 48, y+45);
-  fill('#dfe6e9'); noStroke(); rect(150, y+35, 200, 14, 7);
-  fill(wh > 40 ? colors.danger : wh > 35 ? colors.warning : colors.ok); rect(150, y+35, 200 * Math.min(wh/40, 1), 14, 7);
-  fill('#636e72'); textSize(11); text('Месяц: ' + mh + ' / 160ч', 380, y+45);
-  fill('#dfe6e9'); noStroke(); rect(480, y+35, 200, 14, 7);
-  fill(mh > 160 ? colors.danger : mh > 140 ? colors.warning : colors.ok); rect(480, y+35, 200 * Math.min(mh/160, 1), 14, 7);
-  fill(colors.text); textSize(12); text('Разовые: ' + currentManager.getOnetimeHours() + 'ч | Свободно: ' + Math.max(0, 40-wh) + 'ч', 720, y+45);
+  fill('#636e72'); textSize(11); text('Неделя: ' + wh + ' / 40ч', 48, y+40);
+  fill('#dfe6e9'); noStroke(); rect(150, y+32, 180, 12, 6);
+  fill(wh > 40 ? colors.danger : wh > 35 ? colors.warning : colors.ok); rect(150, y+32, 180 * Math.min(wh/40, 1), 12, 6);
+  fill('#636e72'); textSize(11); text('Месяц: ' + mh + ' / 160ч', 360, y+40);
+  fill('#dfe6e9'); noStroke(); rect(450, y+32, 180, 12, 6);
+  fill(mh > 160 ? colors.danger : mh > 140 ? colors.warning : colors.ok); rect(450, y+32, 180 * Math.min(mh/160, 1), 12, 6);
+  fill(colors.text); textSize(12); text('Разовые: ' + currentManager.getOnetimeHours() + 'ч | Свободно: ' + Math.max(0, 40-wh) + 'ч', 660, y+40);
 }
 
 function drawTeamView() {
