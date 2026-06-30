@@ -27,8 +27,6 @@ var calendarMonth = new Date().getMonth();
 var calendarYear = new Date().getFullYear();
 
 var colors = {
-
-var colors = {
   bg: '#f5f6fa', card: '#ffffff', weekly: '#6c5ce7', monthly: '#e17055',
   onetime: '#00b894', done: '#b2bec3', completed: '#636e72', text: '#2d3436',
   danger: '#d63031', warning: '#fdcb6e', ok: '#00b894', accent: '#0984e3'
@@ -398,7 +396,7 @@ function mousePressed() {
     var blocks = [{tasks:currentManager.getWeeklyTasks(),x:30},{tasks:currentManager.getMonthlyTasks(),x:380},{tasks:currentManager.getOnetimeTasks(),x:730}];
     for (var b=0;b<blocks.length;b++) {
       var block=blocks[b]; var active=block.tasks.filter(function(t){return t.status!=='done';});
-      for (var j=0;j<Math.min(active.length,5);j++) {
+      for (var j=0;j<Math.min(active.length,6);j++) {
        var ty = 226;
 for (var k = 0; k < j; k++) {
   var hasDesc = active[k].description && active[k].description.length > 0;
