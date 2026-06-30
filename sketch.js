@@ -23,6 +23,10 @@ var showAddForm = false;
 var newTaskType = 'weekly';
 var newTaskAssignee = null;
 var dataLoaded = false;
+var calendarMonth = new Date().getMonth();
+var calendarYear = new Date().getFullYear();
+
+var colors = {
 
 var colors = {
   bg: '#f5f6fa', card: '#ffffff', weekly: '#6c5ce7', monthly: '#e17055',
