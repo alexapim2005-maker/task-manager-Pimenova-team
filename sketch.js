@@ -167,18 +167,21 @@ function drawBlock(title, tasks, x, y, color) {
   fill('#fff'); stroke('#e0e0e0'); strokeWeight(1); rect(x, y+34, 340, 185, 0, 0, 7, 7);
   var active = tasks.filter(function(t) { return t.status !== 'done'; });
   if (active.length === 0) { fill('#b2bec3'); noStroke(); textSize(12); text('Нет задач', x+12, y+60); return; }
-  for (var i = 0; i < Math.min(active.length, 5); i++) {
+  for (var i = 0; i < Math.min(active.length, 10); i++) {
     var t = active[i]; var ty = y + 46 + i * 34;
     fill('#fff'); stroke('#b2bec3'); strokeWeight(2); rect(x+10, ty+6, 16, 16, 3); noStroke();
-    fill(colors.text); textSize(12); text(t.title, x+44, ty+13);
+    fill(colors.text); textSize(12); text(t.title, x+44, ty+11);
     fill('#636e72'); textSize(9);
     var an = t.assignee ? t.assignee.name.split('(')[0].trim() : '';
-    text(t.hours + 'ч | ' + t.deadline + ' | ' + an, x+44, ty+27);
+    var info = t.hours + 'ч | ' + t.deadline + ' | ' + an;
+    if (t.description) {
+      info = info + ' | ' + t.description;
+    }
+    text(info, x+44, ty+25);
     fill('#e74c3c'); noStroke(); rect(x+308, ty+6, 22, 20, 3);
     fill('#fff'); textSize(14); textAlign(CENTER); text('×', x+319, ty+21); textAlign(LEFT);
   }
 }
-
 function drawCompletedBlock(tasks, x, y) {
   fill(colors.completed); noStroke(); rect(x, y, 1040, 34, 7);
   fill('#fff'); textSize(14); textStyle(BOLD); text('✅ Завершённые задачи', x+12, y+23); textStyle(NORMAL);
