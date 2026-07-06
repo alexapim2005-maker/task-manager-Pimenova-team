@@ -1,18 +1,3 @@
-// ====== FIREBASE ======
-const firebaseConfig = {
-  apiKey: "AIzaSyDW3bm7Kb5Sv3KHQFEq-LxBWmYo3O9rGUk",
-  authDomain: "team-tasks-30813.firebaseapp.com",
-  databaseURL: "https://team-tasks-30813-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "team-tasks-30813",
-  storageBucket: "team-tasks-30813.firebasestorage.app",
-  messagingSenderId: "591079444769",
-  appId: "1:591079444769:web:f18a3330f267a3bf572e60"
-};
-
-firebase.initializeApp(firebaseConfig);
-var database = firebase.database();
-var dataRef = database.ref('managers');
-
 var managers = [];
 var currentManager = null;
 var activeView = 'personal';
@@ -22,9 +7,6 @@ var showNotifications = false;
 var showAddForm = false;
 var newTaskType = 'weekly';
 var newTaskAssignee = null;
-var dataLoaded = false;
-var calendarMonth = new Date().getMonth();
-var calendarYear = new Date().getFullYear();
 
 var colors = {
   bg: '#f5f6fa', card: '#ffffff', weekly: '#6c5ce7', monthly: '#e17055',
@@ -37,50 +19,6 @@ function setup() {
   canvas.parent('app-container');
   textFont('Arial');
   
-  // Загружаем данные из Firebase
-  dataRef.on('value', function(snapshot) {
-    var data = snapshot.val();
-    if (data) {
-      managers = [];
-      var map = {};
-      
-      // Преобразуем объект в массив
-      var keys = Object.keys(data);
-      for (var k = 0; k < keys.length; k++) {
-        var item = data[keys[k]];
-        var mgr = new Manager(item.name);
-        map[item.name] = mgr;
-        managers.push(mgr);
-      }
-      
-      for (var k = 0; k < keys.length; k++) {
-        var item = data[keys[k]];
-        var mgr = map[item.name];
-        var tasks = item.tasks || [];
-        for (var j = 0; j < tasks.length; j++) {
-          var t = tasks[j];
-          var assignee = t.assigneeName ? map[t.assigneeName] : mgr;
-          var task = new Task(t.title, t.type, t.hours, t.deadline, assignee, t.description||'');
-          task.status = t.status || 'todo';
-          task.completedDate = t.completedDate || null;
-          mgr.tasks.push(task);
-        }
-      }
-    } else {
-      createTestData();
-    }
-    
-    if (!dataLoaded) {
-      dataLoaded = true;
-      currentManager = managers[0];
-      calendarManager = managers[0];
-      newTaskAssignee = currentManager;
-      updateAssigneeButtons();
-    }
-    checkNotifications();
-  });
-}
-function createTestData() {
   managers = [];
   var a = new Manager('Александра Пименова (Руководитель)');
   var v = new Manager('Вера Гусева (Менеджер)');
@@ -92,15 +30,15 @@ function createTestData() {
   v.addTask(new Task('Презентация для клиента', 'onetime', 6, '28.06.2026', v, 'Для встречи с Петровым'));
   va.addTask(new Task('Анализ рынка', 'weekly', 4, 'ПН', va, 'Мониторинг конкурентов'));
   va.addTask(new Task('Обновление базы', 'onetime', 8, '27.06.2026', va, 'Перенести данные в CRM'));
-  saveData();
+  
+  currentManager = managers[0];
+  calendarManager = managers[0];
+  newTaskAssignee = currentManager;
+  updateAssigneeButtons();
+  checkNotifications();
 }
 
 function draw() {
-  if (!dataLoaded) {
-    background(colors.bg);
-    fill(colors.text); textSize(20); textAlign(CENTER); text('Загрузка данных...', 600, 400); textAlign(LEFT);
-    return;
-  }
   background(colors.bg);
   drawHeader();
   drawViewTabs();
@@ -157,50 +95,30 @@ function drawPersonalView() {
   drawBlock('Еженедельные', currentManager.getWeeklyTasks(), 30, 180, colors.weekly);
   drawBlock('Ежемесячные', currentManager.getMonthlyTasks(), 380, 180, colors.monthly);
   drawBlock('Разовые', currentManager.getOnetimeTasks(), 730, 180, colors.onetime);
-  drawCompletedBlock(currentManager.getCompletedTasks(), 30, 440);
+  drawCompletedBlock(currentManager.getCompletedTasks(), 30, 420);
   drawStats();
-  fill('#00b894'); noStroke(); rect(850, 710, 200, 45, 22);
-  fill('#fff'); textSize(16); textStyle(BOLD); textAlign(CENTER); text('+ Новая задача', 950, 738); textAlign(LEFT); textStyle(NORMAL);
+  fill('#00b894'); noStroke(); rect(850, 710, 200, 40, 20);
+  fill('#fff'); textSize(15); textAlign(CENTER); text('+ Новая задача', 950, 736); textAlign(LEFT);
 }
 
 function drawBlock(title, tasks, x, y, color) {
   fill(color); noStroke(); rect(x, y, 340, 34, 7);
   fill('#fff'); textSize(14); textStyle(BOLD); text(title, x+12, y+23); textStyle(NORMAL);
-  
-  // Увеличим высоту блока для описаний
-  fill('#fff'); stroke('#e0e0e0'); strokeWeight(1); rect(x, y+34, 340, 220, 0, 0, 7, 7);
+  fill('#fff'); stroke('#e0e0e0'); strokeWeight(1); rect(x, y+34, 340, 185, 0, 0, 7, 7);
   var active = tasks.filter(function(t) { return t.status !== 'done'; });
   if (active.length === 0) { fill('#b2bec3'); noStroke(); textSize(12); text('Нет задач', x+12, y+60); return; }
-  
-  for (var i = 0; i < Math.min(active.length, 6); i++) {
-    var t = active[i];
-    var hasDesc = t.description && t.description.length > 0;
-    var rowHeight = hasDesc ? 48 : 34;
-    var ty = y + 46;
-    for (var k = 0; k < i; k++) {
-      ty += (active[k].description && active[k].description.length > 0) ? 48 : 34;
-    }
-    
-    fill('#fff'); stroke('#b2bec3'); strokeWeight(2); rect(x+10, ty+4, 16, 16, 3); noStroke();
-    fill(colors.text); textSize(12); text(t.title, x+32, ty+14);
-    
-    var an = t.assignee ? t.assignee.name.split('(')[0].trim() : '';
+  for (var i = 0; i < Math.min(active.length, 5); i++) {
+    var t = active[i]; var ty = y + 46 + i * 34;
+    fill('#fff'); stroke('#b2bec3'); strokeWeight(2); rect(x+10, ty+6, 16, 16, 3); noStroke();
+    fill(colors.text); textSize(12); text(t.title, x+44, ty+13);
     fill('#636e72'); textSize(9);
-    text(t.hours + 'ч | ' + t.deadline + ' | ' + an, x+32, ty+26);
-    
-    // Описание на отдельной строке
-    if (hasDesc) {
-      fill('#636e72'); textSize(8); textStyle(ITALIC);
-      var descText = t.description;
-      if (descText.length > 40) descText = descText.substring(0, 38) + '…';
-      text(descText, x+32, ty+40);
-      textStyle(NORMAL);
-    }
-    
-    fill('#e74c3c'); noStroke(); rect(x+308, ty+2, 22, 20, 3);
-    fill('#fff'); textSize(14); textAlign(CENTER); text('×', x+319, ty+17); textAlign(LEFT);
+    var an = t.assignee ? t.assignee.name.split('(')[0].trim() : '';
+    text(t.hours + 'ч | ' + t.deadline + ' | ' + an, x+44, ty+27);
+    fill('#e74c3c'); noStroke(); rect(x+308, ty+6, 22, 20, 3);
+    fill('#fff'); textSize(14); textAlign(CENTER); text('×', x+319, ty+21); textAlign(LEFT);
   }
 }
+
 function drawCompletedBlock(tasks, x, y) {
   fill(colors.completed); noStroke(); rect(x, y, 1040, 34, 7);
   fill('#fff'); textSize(14); textStyle(BOLD); text('✅ Завершённые задачи', x+12, y+23); textStyle(NORMAL);
@@ -221,17 +139,17 @@ function drawCompletedBlock(tasks, x, y) {
 }
 
 function drawStats() {
-  var y = 630;
-  fill('#fff'); stroke('#e0e0e0'); rect(30, y, 1040, 55, 7);
-  fill(colors.text); textSize(15); textStyle(BOLD); text('📊 Нагрузка: ' + currentManager.name, 48, y+22); textStyle(NORMAL);
+  var y = 600;
+  fill('#fff'); stroke('#e0e0e0'); rect(30, y, 1040, 65, 7);
+  fill(colors.text); textSize(15); textStyle(BOLD); text('📊 Нагрузка: ' + currentManager.name, 48, y+25); textStyle(NORMAL);
   var wh = currentManager.getWeeklyHours(), mh = currentManager.getMonthlyHours();
-  fill('#636e72'); textSize(11); text('Неделя: ' + wh + ' / 40ч', 48, y+40);
-  fill('#dfe6e9'); noStroke(); rect(150, y+32, 180, 12, 6);
-  fill(wh > 40 ? colors.danger : wh > 35 ? colors.warning : colors.ok); rect(150, y+32, 180 * Math.min(wh/40, 1), 12, 6);
-  fill('#636e72'); textSize(11); text('Месяц: ' + mh + ' / 160ч', 360, y+40);
-  fill('#dfe6e9'); noStroke(); rect(450, y+32, 180, 12, 6);
-  fill(mh > 160 ? colors.danger : mh > 140 ? colors.warning : colors.ok); rect(450, y+32, 180 * Math.min(mh/160, 1), 12, 6);
-  fill(colors.text); textSize(12); text('Разовые: ' + currentManager.getOnetimeHours() + 'ч | Свободно: ' + Math.max(0, 40-wh) + 'ч', 660, y+40);
+  fill('#636e72'); textSize(11); text('Неделя: ' + wh + ' / 40ч', 48, y+45);
+  fill('#dfe6e9'); noStroke(); rect(150, y+35, 200, 14, 7);
+  fill(wh > 40 ? colors.danger : wh > 35 ? colors.warning : colors.ok); rect(150, y+35, 200 * Math.min(wh/40, 1), 14, 7);
+  fill('#636e72'); textSize(11); text('Месяц: ' + mh + ' / 160ч', 380, y+45);
+  fill('#dfe6e9'); noStroke(); rect(480, y+35, 200, 14, 7);
+  fill(mh > 160 ? colors.danger : mh > 140 ? colors.warning : colors.ok); rect(480, y+35, 200 * Math.min(mh/160, 1), 14, 7);
+  fill(colors.text); textSize(12); text('Разовые: ' + currentManager.getOnetimeHours() + 'ч | Свободно: ' + Math.max(0, 40-wh) + 'ч', 720, y+45);
 }
 
 function drawTeamView() {
@@ -258,42 +176,30 @@ function drawTeamView() {
   }
 }
 
-  y += 26;
-  
-  // Сетка 4×7 с задачами
-  for (var w = 0; w < 4; w++) {
-    for (var d = 0; d < 7; d++) {
-      var cx = 30 + d*160;
-      var cy = y + w*cellH + w*3;
-      var dayNum = w*7 + d + 1;
-      var dateStr = String(dayNum).padStart(2,'0') + '.07.2026';
-      
-      fill('#fff'); stroke('#e0e0e0'); rect(cx, cy, cellW, cellH, 4);
-      noStroke(); fill(colors.text); textSize(12); textStyle(BOLD); text(dayNum, cx+10, cy+18); textStyle(NORMAL);
-      
-      // Задачи на этот день
-      var dayTasks = getTasksByDate(calendarManager, dateStr);
-      var taskY = cy + 28;
-      for (var t = 0; t < Math.min(dayTasks.length, 4); t++) {
-        var task = dayTasks[t];
-        var tc = task.type==='weekly'?colors.lightWeekly:task.type==='monthly'?colors.lightMonthly:colors.lightOnetime;
-        if (task.status === 'done') tc = colors.done;
-        fill(tc); noStroke(); rect(cx+5, taskY, cellW-10, 16, 3);
-        fill(colors.text); textSize(8);
-        var taskTitle = task.title.length > 14 ? task.title.substring(0,13)+'…' : task.title;
-        text(taskTitle, cx+8, taskY+12);
-        textAlign(RIGHT); text(task.hours+'ч', cx+cellW-8, taskY+12); textAlign(LEFT);
-        taskY += 18;
-      }
-      if (dayTasks.length > 4) {
-        fill('#636e72'); textSize(8); text('+'+(dayTasks.length-4)+' ещё', cx+8, taskY);
-      }
-    }
+function drawCalendarView() {
+  var y = 160;
+  fill(colors.text); textSize(20); textStyle(BOLD); text('📅 Календарь загрузки', 30, y); textStyle(NORMAL);
+  for (var i = 0; i < managers.length; i++) {
+    var bx = 280 + i * 200;
+    fill(calendarManager === managers[i] ? colors.accent : '#dfe6e9'); noStroke(); rect(bx, y-10, 180, 26, 4);
+    fill(calendarManager === managers[i] ? '#fff' : colors.text); textSize(11); textAlign(CENTER); text(managers[i].name, bx+90, y+8); textAlign(LEFT);
   }
-// ====== КЛАССЫ ======
+  y += 35;
+  var days = ['ПН', 'ВТ', 'СР', 'ЧТ', 'ПТ', 'СБ', 'ВС'];
+  for (var d = 0; d < 7; d++) {
+    fill(colors.accent); noStroke(); rect(30+d*155+d*5, y, 155, 26, 4);
+    fill('#fff'); textSize(12); textStyle(BOLD); textAlign(CENTER); text(days[d], 30+d*160+77, y+18); textAlign(LEFT); textStyle(NORMAL);
+  }
+  y += 30;
+  for (var w = 0; w < 4; w++) for (var d = 0; d < 7; d++) {
+    fill('#fff'); stroke('#e0e0e0'); rect(30+d*160, y+w*135, 155, 130, 5);
+    noStroke(); fill(colors.text); textSize(12); textStyle(BOLD); text(w*7+d+1, 40+d*160, y+w*135+18); textStyle(NORMAL);
+  }
+}
+
 function Manager(name) { this.name = name; this.tasks = []; }
-Manager.prototype.addTask = function(t) { this.tasks.push(t); saveData(); };
-Manager.prototype.removeTask = function(t) { var i = this.tasks.indexOf(t); if(i>-1) { this.tasks.splice(i,1); saveData(); } };
+Manager.prototype.addTask = function(t) { this.tasks.push(t); };
+Manager.prototype.removeTask = function(t) { var i = this.tasks.indexOf(t); if(i>-1) this.tasks.splice(i,1); };
 Manager.prototype.getWeeklyTasks = function() { return this.tasks.filter(function(t){return t.type==='weekly';}); };
 Manager.prototype.getMonthlyTasks = function() { return this.tasks.filter(function(t){return t.type==='monthly';}); };
 Manager.prototype.getOnetimeTasks = function() { return this.tasks.filter(function(t){return t.type==='onetime';}); };
@@ -317,7 +223,6 @@ Task.prototype.complete = function() {
 };
 Task.prototype.reopen = function() { this.status = 'todo'; this.completedDate = null; };
 
-// ====== ФОРМА ======
 function updateAssigneeButtons() {
   var c = document.getElementById('assignee-btns'); if(!c)return; c.innerHTML = '';
   for (var i=0;i<managers.length;i++) {
@@ -329,24 +234,13 @@ function updateAssigneeButtons() {
 function setType(type) { newTaskType=type; var bs=document.getElementsByClassName('type-btn'); for(var i=0;i<bs.length;i++){bs[i].classList.remove('active');if(bs[i].classList.contains(type))bs[i].classList.add('active');} }
 function saveTaskFromForm() {
   var t = document.getElementById('task-title').value.trim();
-  var h = parseInt(document.getElementById('task-hours').value) || 0;
-  var m = parseInt(document.getElementById('task-minutes').value) || 0;
+  var h = parseInt(document.getElementById('task-hours').value);
   var d = document.getElementById('task-deadline').value.trim();
-// Преобразуем в формат ДД.ММ.ГГГГ
-if (d) {
-  var parts = d.split('-');
-  d = parts[2] + '.' + parts[1] + '.' + parts[0];
-}
   var desc = document.getElementById('task-description').value.trim();
-  
-  var totalHours = h + (m / 60);
-  totalHours = Math.round(totalHours * 100) / 100;
-  
-  if (t && totalHours > 0 && d && newTaskAssignee) {
-    newTaskAssignee.addTask(new Task(t, newTaskType, totalHours, d, newTaskAssignee, desc));
+  if (t && h && d && newTaskAssignee) {
+    newTaskAssignee.addTask(new Task(t, newTaskType, h, d, newTaskAssignee, desc));
     document.getElementById('task-title').value = '';
     document.getElementById('task-hours').value = '';
-    document.getElementById('task-minutes').value = '';
     document.getElementById('task-deadline').value = '';
     document.getElementById('task-description').value = '';
     hideForm();
@@ -356,52 +250,7 @@ function showForm() { showAddForm=true; newTaskAssignee=currentManager; document
 function hideForm() { showAddForm=false; document.getElementById('add-form').classList.remove('visible'); document.getElementById('overlay').classList.remove('visible'); }
 function checkNotifications() { notifications=[]; for(var i=0;i<managers.length;i++){var m=managers[i]; if(m.getWeeklyHours()>40) notifications.push({type:'overload',message:m.name+': перегруз '+m.getWeeklyHours().toFixed(1)+'ч'});} }
 
-// ====== ДАННЫЕ (Firebase) ======
-function saveData() {
-  try {
-    var data = [];
-    for (var i = 0; i < managers.length; i++) {
-      var m = managers[i];
-      var tasksData = [];
-      for (var j = 0; j < m.tasks.length; j++) {
-        var t = m.tasks[j];
-        tasksData.push({
-          title: t.title, type: t.type, hours: t.hours,
-          deadline: t.deadline, description: t.description || '',
-          status: t.status, completedDate: t.completedDate || null,
-          assigneeName: t.assignee ? t.assignee.name : null
-        });
-      }
-      data.push({ name: m.name, tasks: tasksData });
-    }
-    dataRef.set(data);
-  } catch(e) {}
-}
-
-function getTasksByDate(manager, dateStr) {
-  var tasks = [];
-  for (var i = 0; i < manager.tasks.length; i++) {
-    var t = manager.tasks[i];
-    var dl = t.deadline || '';
-    if (dl.indexOf(dateStr) !== -1) {
-      tasks.push(t);
-    }
-  }
-  return tasks;
-}
-
-function getDayHoursByDate(manager, dateStr) {
-  var tasks = getTasksByDate(manager, dateStr);
-  var hours = 0;
-  for (var i = 0; i < tasks.length; i++) {
-    if (tasks[i].status !== 'done') hours += tasks[i].hours;
-  }
-  return Math.round(hours * 10) / 10;
-}
-
-// ====== КЛИКИ ======
 function mousePressed() {
-  if (!dataLoaded) return;
   if (mouseX > 1095 && mouseX < 1130 && mouseY > 10 && mouseY < 45) { showNotifications = !showNotifications; return; }
   if (showNotifications) {
     if (mouseX < 900 || mouseX > 1160 || mouseY < 55 || mouseY > 275) showNotifications = false;
@@ -428,21 +277,17 @@ function mousePressed() {
     var blocks = [{tasks:currentManager.getWeeklyTasks(),x:30},{tasks:currentManager.getMonthlyTasks(),x:380},{tasks:currentManager.getOnetimeTasks(),x:730}];
     for (var b=0;b<blocks.length;b++) {
       var block=blocks[b]; var active=block.tasks.filter(function(t){return t.status!=='done';});
-      for (var j=0;j<Math.min(active.length,6);j++) {
-       var ty = 226;
-for (var k = 0; k < j; k++) {
-  var hasDesc = active[k].description && active[k].description.length > 0;
-  ty += hasDesc ? 48 : 34;
-}
+      for (var j=0;j<Math.min(active.length,5);j++) {
+        var ty=226+j*34;
         if (mouseX>block.x+308&&mouseX<block.x+330&&mouseY>ty+6&&mouseY<ty+26){currentManager.removeTask(active[j]);return;}
-        if (mouseX>block.x+10&&mouseX<block.x+26&&mouseY>ty+6&&mouseY<ty+22){active[j].complete();saveData();return;}
+        if (mouseX>block.x+10&&mouseX<block.x+26&&mouseY>ty+6&&mouseY<ty+22){active[j].complete();return;}
       }
     }
     var completed=currentManager.getCompletedTasks();
     for (var k=0;k<Math.min(completed.length,4);k++) {
-      var t=completed[k],ty=490+k*30;
+      var t=completed[k],ty=464+k*30;
       if (mouseX>335&&mouseX<360&&mouseY>ty+3&&mouseY<ty+23){currentManager.removeTask(t);return;}
-      if (mouseX>290&&mouseX<325&&mouseY>ty+3&&mouseY<ty+23){t.reopen();saveData();return;}
+      if (mouseX>290&&mouseX<325&&mouseY>ty+3&&mouseY<ty+23){t.reopen();return;}
     }
   }
 }
