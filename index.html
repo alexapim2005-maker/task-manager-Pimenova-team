@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Таск Менеджер</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <style>
         body {
             margin: 0; padding: 0; display: flex; justify-content: center; align-items: center;
@@ -66,18 +68,15 @@
                 <button class="type-btn monthly" onclick="setType('monthly')">Ежемес.</button>
                 <button class="type-btn onetime" onclick="setType('onetime')">Разов.</button>
             </div>
-            <input type="number" id="task-hours" placeholder="Часы" min="1">
-            <input type="text" id="task-deadline" placeholder="Дедлайн">
+            <input type="text" id="task-hours" placeholder="Часы" style="width:60px;">
+            <span style="color:#636e72; margin-right:8px;">ч</span>
+            <input type="text" id="task-minutes" placeholder="Мин" style="width:60px;">
+            <span style="color:#636e72;">мин</span>
+            <input type="date" id="task-deadline" style="width:160px;">
             <br>
             <textarea id="task-description" placeholder="Описание задачи и вводные..."></textarea>
             <br><br>
             <span style="color:#636e72; font-size:12px;">Ответственный:</span>
             <div id="assignee-btns" style="display:inline-block;"></div>
             <br><br>
-            <button class="save-btn" onclick="saveTaskFromForm()">💾 Сохранить</button>
-            <button class="cancel-btn" onclick="hideForm()">✕ Отмена</button>
-        </div>
-    </div>
-    <script src="sketch.js"></script>
-</body>
-</html>
+            <button class="save-btn" onclick="saveTaskFromForm()">💾 Сохра
