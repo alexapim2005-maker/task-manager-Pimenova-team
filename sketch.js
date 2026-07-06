@@ -60,10 +60,7 @@ function setup() {
           mgr.tasks.push(task);
         }
       }
-    } else {
-      createTestData();
     }
-    
     if (!dataLoaded) {
       dataLoaded = true;
       currentManager = managers[0];
@@ -73,21 +70,6 @@ function setup() {
     }
     checkNotifications();
   });
-}
-
-function createTestData() {
-  managers = [];
-  var a = new Manager('Александра Пименова (Руководитель)');
-  var v = new Manager('Вера Гусева (Менеджер)');
-  var va = new Manager('Варвара Андреева (Менеджер)');
-  managers.push(a, v, va);
-  a.addTask(new Task('Стратегическое планирование', 'weekly', 4, 'ПН', a, 'Определить цели на квартал'));
-  a.addTask(new Task('Совещание с командой', 'weekly', 2, 'СР', a, 'Обсудить результаты'));
-  v.addTask(new Task('Отчёт по продажам', 'weekly', 3, 'ПН', v, 'Собрать данные из CRM'));
-  v.addTask(new Task('Презентация для клиента', 'onetime', 6, '28.06.2026', v, 'Для встречи с Петровым'));
-  va.addTask(new Task('Анализ рынка', 'weekly', 4, 'ПН', va, 'Мониторинг конкурентов'));
-  va.addTask(new Task('Обновление базы', 'onetime', 8, '27.06.2026', va, 'Перенести данные в CRM'));
-  saveData();
 }
 
 function draw() {
@@ -164,7 +146,6 @@ function drawBlock(title, tasks, x, y, color) {
   fill('#fff'); stroke('#e0e0e0'); strokeWeight(1); rect(x, y+34, 340, 220, 0, 0, 7, 7);
   var active = tasks.filter(function(t) { return t.status !== 'done'; });
   if (active.length === 0) { fill('#b2bec3'); noStroke(); textSize(12); text('Нет задач', x+12, y+60); return; }
-  
   for (var i = 0; i < Math.min(active.length, 6); i++) {
     var t = active[i];
     var hasDesc = t.description && t.description.length > 0;
@@ -172,14 +153,11 @@ function drawBlock(title, tasks, x, y, color) {
     for (var k = 0; k < i; k++) {
       ty += (active[k].description && active[k].description.length > 0) ? 48 : 34;
     }
-    
     fill('#fff'); stroke('#b2bec3'); strokeWeight(2); rect(x+10, ty+4, 16, 16, 3); noStroke();
     fill(colors.text); textSize(12); text(t.title, x+32, ty+14);
-    
     var an = t.assignee ? t.assignee.name.split('(')[0].trim() : '';
     fill('#636e72'); textSize(9);
     text(t.hours + 'ч | ' + t.deadline + ' | ' + an, x+32, ty+26);
-    
     if (hasDesc) {
       fill('#636e72'); textSize(8); textStyle(ITALIC);
       var descText = t.description;
@@ -187,7 +165,6 @@ function drawBlock(title, tasks, x, y, color) {
       text(descText, x+32, ty+40);
       textStyle(NORMAL);
     }
-    
     fill('#e74c3c'); noStroke(); rect(x+308, ty+2, 22, 20, 3);
     fill('#fff'); textSize(14); textAlign(CENTER); text('×', x+319, ty+17); textAlign(LEFT);
   }
@@ -313,14 +290,10 @@ function saveTaskFromForm() {
   var h = parseInt(document.getElementById('task-hours').value) || 0;
   var m = parseInt(document.getElementById('task-minutes').value) || 0;
   var d = document.getElementById('task-deadline').value.trim();
-  if (d) {
-    var parts = d.split('-');
-    d = parts[2] + '.' + parts[1] + '.' + parts[0];
-  }
+  if (d) { var parts = d.split('-'); d = parts[2] + '.' + parts[1] + '.' + parts[0]; }
   var desc = document.getElementById('task-description').value.trim();
   var totalHours = h + (m / 60);
   totalHours = Math.round(totalHours * 100) / 100;
-  
   if (t && totalHours > 0 && d && newTaskAssignee) {
     newTaskAssignee.addTask(new Task(t, newTaskType, totalHours, d, newTaskAssignee, desc));
     document.getElementById('task-title').value = '';
@@ -335,7 +308,7 @@ function showForm() { showAddForm=true; newTaskAssignee=currentManager; document
 function hideForm() { showAddForm=false; document.getElementById('add-form').classList.remove('visible'); document.getElementById('overlay').classList.remove('visible'); }
 function checkNotifications() { notifications=[]; for(var i=0;i<managers.length;i++){var m=managers[i]; if(m.getWeeklyHours()>40) notifications.push({type:'overload',message:m.name+': перегруз '+m.getWeeklyHours().toFixed(1)+'ч'});} }
 
-// ====== ДАННЫЕ (Firebase) ======
+// ====== ДАННЫЕ ======
 function saveData() {
   try {
     var data = [];
