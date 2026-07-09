@@ -93,7 +93,114 @@ function draw() {
   else if (activeView === 'team') drawTeamView();
   else if (activeView === 'calendar') drawCalendarView();
     if (selectedTask) {
-    drawTaskDetail();
+    function drawTaskDetail() {
+  // Затемнение
+  fill(0, 0, 0, 150); noStroke(); rect(0, 0, 1200, 850);
+  
+  // Окно
+  var cx = 250, cy = 200, cw = 700, ch = 400;
+  fill('#fff'); stroke('#636e72'); strokeWeight(2); rect(cx, cy, cw, ch, 12);
+  noStroke();
+  
+  fill(colors.text); textSize(18); textStyle(BOLD);
+  text(editMode ? 'Редактирование задачи' : 'Детали задачи', cx+20, cy+30); textStyle(NORMAL);
+  
+  if (editMode) {
+    // HTML-форма редактирования
+    var form = document.getElementById('edit-form');
+    if (!form) {
+      form = document.createElement('div');
+      form.id = 'edit-form';
+      form.style.cssText = 'position:fixed; top:250px; left:270px; z-index:10000;';
+      form.innerHTML = `
+        <input type="text" id="edit-title" placeholder="Название" style="width:280px; padding:8px; margin-bottom:8px; border:1px solid #b2bec3; border-radius:4px; font-size:13px; display:block;">
+        <input type="text" id="edit-hours" placeholder="Часы" style="width:80px; padding:8px; margin-right:8px; margin-bottom:8px; border:1px solid #b2bec3; border-radius:4px; font-size:13px;">
+        <input type="text" id="edit-deadline" placeholder="Дедлайн" style="width:140px; padding:8px; margin-bottom:8px; border:1px solid #b2bec3; border-radius:4px; font-size:13px;">
+        <textarea id="edit-desc" placeholder="Описание" style="width:400px; height:80px; padding:8px; margin-bottom:10px; border:1px solid #b2bec3; border-radius:4px; font-size:13px; display:block;"></textarea>
+        <button id="edit-save" style="padding:8px 20px; background:#00b894; color:#fff; border:none; border-radius:4px; cursor:pointer; font-size:14px; margin-right:8px;">💾 Сохранить</button>
+        <button id="edit-cancel" style="padding:8px 20px; background:#dfe6e9; color:#2d3436; border:none; border-radius:4px; cursor:pointer; font-size:14px;">Отмена</button>
+      `;
+      document.body.appendChild(form);
+      
+      document.getElementById('edit-save').onclick = function() {
+  var newTitle = document.getElementById('edit-title').value;
+  var newHours = document.getElementById('edit-hours').value;
+  var newDeadline = document.getElementById('edit-deadline').value;
+  var newDesc = document.getElementById('edit-desc').value;
+  
+  if (newTitle) selectedTask.title = newTitle;
+  if (newHours) selectedTask.hours = parseFloat(newHours);
+  if (newDeadline) selectedTask.deadline = newDeadline;
+  selectedTask.description = newDesc;
+  
+  saveData();
+  editMode = false;
+  form.style.display = 'none';
+};
+        selectedTask.title = document.getElementById('edit-title').value || selectedTask.title;
+        selectedTask.hours = parseFloat(document.getElementById('edit-hours').value) || selectedTask.hours;
+        selectedTask.deadline = document.getElementById('edit-deadline').value || selectedTask.deadline;
+        selectedTask.description = document.getElementById('edit-desc').value || selectedTask.description;
+        saveData();
+        editMode = false;
+        form.style.display = 'none';
+      };
+      
+      document.getElementById('edit-cancel').onclick = function() {
+        editMode = false;
+        form.style.display = 'none';
+      };
+    }
+    
+    form.style.display = 'block';
+    document.getElementById('edit-title').value = editTitle || selectedTask.title;
+    document.getElementById('edit-hours').value = editHours || selectedTask.hours;
+    document.getElementById('edit-deadline').value = editDeadline || selectedTask.deadline;
+    document.getElementById('edit-desc').value = editDesc || selectedTask.description || '';
+  } else {
+    // Скрываем форму
+    var form = document.getElementById('edit-form');
+    if (form) form.style.display = 'none';
+    
+    // Просмотр
+    fill(colors.text); textSize(20); textStyle(BOLD); text(selectedTask.title, cx+20, cy+60); textStyle(NORMAL);
+    
+    fill('#636e72'); textSize(13);
+    text('Тип: ' + (selectedTask.type==='weekly'?'Еженедельная':selectedTask.type==='monthly'?'Ежемесячная':'Разовая'), cx+20, cy+90);
+    text('Часы: ' + selectedTask.hours + 'ч', cx+250, cy+90);
+    text('Дедлайн: ' + selectedTask.deadline, cx+380, cy+90);
+    
+    var an = selectedTask.assignee ? selectedTask.assignee.name.split('(')[0].trim() : 'Неназначена';
+    text('Ответственный: ' + an, cx+20, cy+115);
+    text('Статус: ' + (selectedTask.status==='done'?'Выполнена':'В работе'), cx+250, cy+115);
+    if (selectedTask.completedDate) {
+      text('Выполнена: ' + selectedTask.completedDate, cx+380, cy+115);
+    }
+    
+    fill('#636e72'); textSize(12);
+    text('Описание:', cx+20, cy+150);
+    fill(colors.text); textSize(13);
+    var desc = selectedTask.description || 'Нет описания';
+    var words = desc.split(' ');
+    var line = '';
+    var ly = cy+170;
+    for (var w = 0; w < words.length; w++) {
+      var testLine = line + words[w] + ' ';
+      if (textWidth(testLine) > 620) {
+        text(line, cx+20, ly);
+        line = words[w] + ' ';
+        ly += 22;
+      } else {
+        line = testLine;
+      }
+    }
+    text(line, cx+20, ly);
+    
+    fill('#0984e3'); noStroke(); rect(cx+20, cy+350, 150, 36, 8);
+    fill('#fff'); textSize(14); textAlign(CENTER); text('✏️ Редактировать', cx+95, cy+374); textAlign(LEFT);
+    
+    fill('#dfe6e9'); rect(cx+520, cy+350, 150, 36, 8);
+    fill(colors.text); textSize(14); textAlign(CENTER); text('Закрыть', cx+595, cy+374); textAlign(LEFT);
   }
 }
 
