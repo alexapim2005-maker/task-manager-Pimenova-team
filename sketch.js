@@ -410,7 +410,7 @@ function mousePressed() {
   if (!dataLoaded) return;
   
   if (selectedTask) {
-    if (!isInDetailWindow()) {
+if (!isInDetailWindow() && !editMode) {
       var form = document.getElementById('edit-form');
       if (form) form.style.display = 'none';
       selectedTask = null;
