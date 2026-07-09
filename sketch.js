@@ -340,6 +340,7 @@ function saveData() {
 // ====== ОКНО ДЕТАЛЕЙ ======
 function drawTaskDetail() {
   fill(0, 0, 0, 150); noStroke(); rect(0, 0, 1200, 850);
+// Закрытие по клику на фон обрабатывается в mousePressed
   var cx = 250, cy = 200, cw = 700, ch = 400;
   fill('#fff'); stroke('#636e72'); strokeWeight(2); rect(cx, cy, cw, ch, 12);
   noStroke();
@@ -395,7 +396,13 @@ function drawTaskDetail() {
 }
 
 function isInDetailWindow() {
-  return mouseX > 250 && mouseX < 950 && mouseY > 200 && mouseY < 600;
+  // Проверяем и canvas-окно, и HTML-форму
+  var inCanvas = mouseX > 250 && mouseX < 950 && mouseY > 200 && mouseY < 600;
+  var form = document.getElementById('edit-form');
+  if (form && form.style.display === 'block') {
+    return true; // Если форма открыта, всегда считаем что мы внутри
+  }
+  return inCanvas;
 }
 
 // ====== КЛИКИ ======
