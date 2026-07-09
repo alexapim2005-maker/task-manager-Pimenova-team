@@ -504,11 +504,11 @@ function mousePressed() {
           var hasDesc = active[k].description && active[k].description.length > 0;
           ty += hasDesc ? 48 : 34;
         }
-        if (mouseX>block.x+32&&mouseX<block.x+300&&mouseY>ty&&mouseY<ty+30){
-  selectedTask = active[j];
-  editMode = false;
-  return;
-}
+                      if (mouseX>block.x+10&&mouseX<block.x+308&&mouseY>ty+2&&mouseY<ty+30){
+          selectedTask = active[j];
+          editMode = false;
+          return;
+        }
         if (mouseX>block.x+308&&mouseX<block.x+330&&mouseY>ty+6&&mouseY<ty+26){currentManager.removeTask(active[j]);return;}
         if (mouseX>block.x+10&&mouseX<block.x+26&&mouseY>ty+6&&mouseY<ty+22){active[j].complete();saveData();return;}
       }
