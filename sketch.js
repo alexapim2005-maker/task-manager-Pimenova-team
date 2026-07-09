@@ -22,6 +22,12 @@ var showNotifications = false;
 var showAddForm = false;
 var newTaskType = 'weekly';
 var newTaskAssignee = null;
+var selectedTask = null;
+var editMode = false;
+var editTitle = '';
+var editHours = '';
+var editDeadline = '';
+var editDesc = '';
 var dataLoaded = false;
 
 var colors = {
@@ -86,6 +92,9 @@ function draw() {
   if (activeView === 'personal') drawPersonalView();
   else if (activeView === 'team') drawTeamView();
   else if (activeView === 'calendar') drawCalendarView();
+    if (selectedTask) {
+    drawTaskDetail();
+  }
 }
 
 function drawHeader() {
@@ -154,7 +163,12 @@ function drawBlock(title, tasks, x, y, color) {
       ty += (active[k].description && active[k].description.length > 0) ? 48 : 34;
     }
     fill('#fff'); stroke('#b2bec3'); strokeWeight(2); rect(x+10, ty+4, 16, 16, 3); noStroke();
-    fill(colors.text); textSize(12); text(t.title, x+32, ty+14);
+    fill(colors.text); textSize(12);
+if (mouseX > x+32 && mouseX < x+300 && mouseY > ty && mouseY < ty+30) {
+  fill(colors.accent);
+  cursor('pointer');
+}
+text(t.title, x+32, ty+14);
     var an = t.assignee ? t.assignee.name.split('(')[0].trim() : '';
     fill('#636e72'); textSize(9);
     text(t.hours + 'ч | ' + t.deadline + ' | ' + an, x+32, ty+26);
@@ -331,8 +345,133 @@ function saveData() {
 }
 
 // ====== КЛИКИ ======
+function drawTaskDetail() {
+  // Затемнение
+  fill(0, 0, 0, 150); noStroke(); rect(0, 0, 1200, 850);
+  
+  // Окно
+  var cx = 250, cy = 200, cw = 700, ch = 400;
+  fill('#fff'); stroke('#636e72'); strokeWeight(2); rect(cx, cy, cw, ch, 12);
+  noStroke();
+  
+  fill(colors.text); textSize(18); textStyle(BOLD);
+  text(editMode ? 'Редактирование задачи' : 'Детали задачи', cx+20, cy+30); textStyle(NORMAL);
+  
+  if (editMode) {
+    // Поля редактирования
+    fill('#fff'); stroke('#b2bec3'); strokeWeight(1); rect(cx+20, cy+50, 300, 30, 4);
+    noStroke(); fill('#636e72'); textSize(13); text(editTitle || 'Название', cx+28, cy+70);
+    
+    rect(cx+340, cy+50, 80, 30, 4);
+    text(editHours || 'Часы', cx+348, cy+70);
+    
+    rect(cx+430, cy+50, 120, 30, 4);
+    text(editDeadline || 'Дедлайн', cx+438, cy+70);
+    
+    stroke('#b2bec3'); rect(cx+20, cy+95, 660, 100, 4);
+    noStroke(); fill('#636e72'); textSize(12); text(editDesc || 'Описание...', cx+28, cy+115);
+    
+    // Кнопка Сохранить
+    fill('#00b894'); noStroke(); rect(cx+20, cy+210, 150, 36, 8);
+    fill('#fff'); textSize(14); textAlign(CENTER); text('💾 Сохранить', cx+95, cy+234); textAlign(LEFT);
+    
+    // Кнопка Отмена
+    fill('#dfe6e9'); rect(cx+180, cy+210, 120, 36, 8);
+    fill(colors.text); textSize(14); textAlign(CENTER); text('Отмена', cx+240, cy+234); textAlign(LEFT);
+  } else {
+    // Просмотр
+    fill(colors.text); textSize(20); textStyle(BOLD); text(selectedTask.title, cx+20, cy+60); textStyle(NORMAL);
+    
+    fill('#636e72'); textSize(13);
+    text('Тип: ' + (selectedTask.type==='weekly'?'Еженедельная':selectedTask.type==='monthly'?'Ежемесячная':'Разовая'), cx+20, cy+90);
+    text('Часы: ' + selectedTask.hours + 'ч', cx+250, cy+90);
+    text('Дедлайн: ' + selectedTask.deadline, cx+380, cy+90);
+    
+    var an = selectedTask.assignee ? selectedTask.assignee.name.split('(')[0].trim() : 'Неназначена';
+    text('Ответственный: ' + an, cx+20, cy+115);
+    text('Статус: ' + (selectedTask.status==='done'?'Выполнена':'В работе'), cx+250, cy+115);
+    if (selectedTask.completedDate) {
+      text('Выполнена: ' + selectedTask.completedDate, cx+380, cy+115);
+    }
+    
+    fill('#636e72'); textSize(12);
+    text('Описание:', cx+20, cy+150);
+    fill(colors.text); textSize(13);
+    var desc = selectedTask.description || 'Нет описания';
+    // Перенос строк
+    var words = desc.split(' ');
+    var line = '';
+    var ly = cy+170;
+    for (var w = 0; w < words.length; w++) {
+      var testLine = line + words[w] + ' ';
+      if (textWidth(testLine) > 620) {
+        text(line, cx+20, ly);
+        line = words[w] + ' ';
+        ly += 22;
+      } else {
+        line = testLine;
+      }
+    }
+    text(line, cx+20, ly);
+    
+    // Кнопка Редактировать
+    fill('#0984e3'); noStroke(); rect(cx+20, cy+350, 150, 36, 8);
+    fill('#fff'); textSize(14); textAlign(CENTER); text('✏️ Редактировать', cx+95, cy+374); textAlign(LEFT);
+    
+    // Кнопка Закрыть
+    fill('#dfe6e9'); rect(cx+520, cy+350, 150, 36, 8);
+    fill(colors.text); textSize(14); textAlign(CENTER); text('Закрыть', cx+595, cy+374); textAlign(LEFT);
+  }
+}
+
+function isInDetailWindow() {
+  var cx = 250, cy = 200, cw = 700, ch = 400;
+  return mouseX > cx && mouseX < cx+cw && mouseY > cy && mouseY < cy+ch;
+}
 function mousePressed() {
   if (!dataLoaded) return;
+    // Окно деталей задачи
+  if (selectedTask) {
+    if (!isInDetailWindow()) {
+      selectedTask = null;
+      editMode = false;
+      return;
+    }
+    var cx = 250, cy = 200;
+    if (editMode) {
+      // Сохранить
+      if (mouseX > cx+20 && mouseX < cx+170 && mouseY > cy+210 && mouseY < cy+246) {
+        selectedTask.title = editTitle || selectedTask.title;
+        selectedTask.hours = parseFloat(editHours) || selectedTask.hours;
+        selectedTask.deadline = editDeadline || selectedTask.deadline;
+        selectedTask.description = editDesc || selectedTask.description;
+        saveData();
+        editMode = false;
+        return;
+      }
+      // Отмена
+      if (mouseX > cx+180 && mouseX < cx+300 && mouseY > cy+210 && mouseY < cy+246) {
+        editMode = false;
+        return;
+      }
+    } else {
+      // Редактировать
+      if (mouseX > cx+20 && mouseX < cx+170 && mouseY > cy+350 && mouseY < cy+386) {
+        editMode = true;
+        editTitle = selectedTask.title;
+        editHours = String(selectedTask.hours);
+        editDeadline = selectedTask.deadline;
+        editDesc = selectedTask.description || '';
+        return;
+      }
+      // Закрыть
+      if (mouseX > cx+520 && mouseX < cx+670 && mouseY > cy+350 && mouseY < cy+386) {
+        selectedTask = null;
+        return;
+      }
+    }
+    return;
+  }
   if (mouseX > 1095 && mouseX < 1130 && mouseY > 10 && mouseY < 45) { showNotifications = !showNotifications; return; }
   if (showNotifications) {
     if (mouseX < 900 || mouseX > 1160 || mouseY < 55 || mouseY > 275) showNotifications = false;
@@ -365,6 +504,11 @@ function mousePressed() {
           var hasDesc = active[k].description && active[k].description.length > 0;
           ty += hasDesc ? 48 : 34;
         }
+        if (mouseX>block.x+32&&mouseX<block.x+300&&mouseY>ty&&mouseY<ty+30){
+  selectedTask = active[j];
+  editMode = false;
+  return;
+}
         if (mouseX>block.x+308&&mouseX<block.x+330&&mouseY>ty+6&&mouseY<ty+26){currentManager.removeTask(active[j]);return;}
         if (mouseX>block.x+10&&mouseX<block.x+26&&mouseY>ty+6&&mouseY<ty+22){active[j].complete();saveData();return;}
       }
@@ -374,6 +518,21 @@ function mousePressed() {
       var t=completed[k],ty=490+k*30;
       if (mouseX>335&&mouseX<360&&mouseY>ty+3&&mouseY<ty+23){currentManager.removeTask(t);return;}
       if (mouseX>290&&mouseX<325&&mouseY>ty+3&&mouseY<ty+23){t.reopen();saveData();return;}
+    }
+  }
+}
+function keyPressed() {
+  if (selectedTask && editMode) {
+    if (keyCode === ENTER || keyCode === RETURN) {
+      selectedTask.title = editTitle || selectedTask.title;
+      selectedTask.hours = parseFloat(editHours) || selectedTask.hours;
+      selectedTask.deadline = editDeadline || selectedTask.deadline;
+      selectedTask.description = editDesc || selectedTask.description;
+      saveData();
+      editMode = false;
+    }
+    if (keyCode === ESCAPE) {
+      editMode = false;
     }
   }
 }
