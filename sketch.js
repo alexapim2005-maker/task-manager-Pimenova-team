@@ -358,27 +358,48 @@ function drawTaskDetail() {
   text(editMode ? 'Редактирование задачи' : 'Детали задачи', cx+20, cy+30); textStyle(NORMAL);
   
   if (editMode) {
-    // Поля редактирования
-    fill('#fff'); stroke('#b2bec3'); strokeWeight(1); rect(cx+20, cy+50, 300, 30, 4);
-    noStroke(); fill('#636e72'); textSize(13); text(editTitle || 'Название', cx+28, cy+70);
+    // HTML-форма редактирования
+    var form = document.getElementById('edit-form');
+    if (!form) {
+      form = document.createElement('div');
+      form.id = 'edit-form';
+      form.style.cssText = 'position:fixed; top:250px; left:270px; z-index:10000;';
+      form.innerHTML = `
+        <input type="text" id="edit-title" placeholder="Название" style="width:280px; padding:8px; margin-bottom:8px; border:1px solid #b2bec3; border-radius:4px; font-size:13px; display:block;">
+        <input type="text" id="edit-hours" placeholder="Часы" style="width:80px; padding:8px; margin-right:8px; margin-bottom:8px; border:1px solid #b2bec3; border-radius:4px; font-size:13px;">
+        <input type="text" id="edit-deadline" placeholder="Дедлайн" style="width:140px; padding:8px; margin-bottom:8px; border:1px solid #b2bec3; border-radius:4px; font-size:13px;">
+        <textarea id="edit-desc" placeholder="Описание" style="width:400px; height:80px; padding:8px; margin-bottom:10px; border:1px solid #b2bec3; border-radius:4px; font-size:13px; display:block;"></textarea>
+        <button id="edit-save" style="padding:8px 20px; background:#00b894; color:#fff; border:none; border-radius:4px; cursor:pointer; font-size:14px; margin-right:8px;">💾 Сохранить</button>
+        <button id="edit-cancel" style="padding:8px 20px; background:#dfe6e9; color:#2d3436; border:none; border-radius:4px; cursor:pointer; font-size:14px;">Отмена</button>
+      `;
+      document.body.appendChild(form);
+      
+      document.getElementById('edit-save').onclick = function() {
+        selectedTask.title = document.getElementById('edit-title').value || selectedTask.title;
+        selectedTask.hours = parseFloat(document.getElementById('edit-hours').value) || selectedTask.hours;
+        selectedTask.deadline = document.getElementById('edit-deadline').value || selectedTask.deadline;
+        selectedTask.description = document.getElementById('edit-desc').value || selectedTask.description;
+        saveData();
+        editMode = false;
+        form.style.display = 'none';
+      };
+      
+      document.getElementById('edit-cancel').onclick = function() {
+        editMode = false;
+        form.style.display = 'none';
+      };
+    }
     
-    rect(cx+340, cy+50, 80, 30, 4);
-    text(editHours || 'Часы', cx+348, cy+70);
-    
-    rect(cx+430, cy+50, 120, 30, 4);
-    text(editDeadline || 'Дедлайн', cx+438, cy+70);
-    
-    stroke('#b2bec3'); rect(cx+20, cy+95, 660, 100, 4);
-    noStroke(); fill('#636e72'); textSize(12); text(editDesc || 'Описание...', cx+28, cy+115);
-    
-    // Кнопка Сохранить
-    fill('#00b894'); noStroke(); rect(cx+20, cy+210, 150, 36, 8);
-    fill('#fff'); textSize(14); textAlign(CENTER); text('💾 Сохранить', cx+95, cy+234); textAlign(LEFT);
-    
-    // Кнопка Отмена
-    fill('#dfe6e9'); rect(cx+180, cy+210, 120, 36, 8);
-    fill(colors.text); textSize(14); textAlign(CENTER); text('Отмена', cx+240, cy+234); textAlign(LEFT);
+    form.style.display = 'block';
+    document.getElementById('edit-title').value = editTitle || selectedTask.title;
+    document.getElementById('edit-hours').value = editHours || selectedTask.hours;
+    document.getElementById('edit-deadline').value = editDeadline || selectedTask.deadline;
+    document.getElementById('edit-desc').value = editDesc || selectedTask.description || '';
   } else {
+    // Скрываем форму
+    var form = document.getElementById('edit-form');
+    if (form) form.style.display = 'none';
+    
     // Просмотр
     fill(colors.text); textSize(20); textStyle(BOLD); text(selectedTask.title, cx+20, cy+60); textStyle(NORMAL);
     
@@ -398,7 +419,6 @@ function drawTaskDetail() {
     text('Описание:', cx+20, cy+150);
     fill(colors.text); textSize(13);
     var desc = selectedTask.description || 'Нет описания';
-    // Перенос строк
     var words = desc.split(' ');
     var line = '';
     var ly = cy+170;
@@ -414,16 +434,13 @@ function drawTaskDetail() {
     }
     text(line, cx+20, ly);
     
-    // Кнопка Редактировать
     fill('#0984e3'); noStroke(); rect(cx+20, cy+350, 150, 36, 8);
     fill('#fff'); textSize(14); textAlign(CENTER); text('✏️ Редактировать', cx+95, cy+374); textAlign(LEFT);
     
-    // Кнопка Закрыть
     fill('#dfe6e9'); rect(cx+520, cy+350, 150, 36, 8);
     fill(colors.text); textSize(14); textAlign(CENTER); text('Закрыть', cx+595, cy+374); textAlign(LEFT);
   }
 }
-
 function isInDetailWindow() {
   var cx = 250, cy = 200, cw = 700, ch = 400;
   return mouseX > cx && mouseX < cx+cw && mouseY > cy && mouseY < cy+ch;
