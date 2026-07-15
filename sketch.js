@@ -340,7 +340,6 @@ function saveData() {
 // ====== ОКНО ДЕТАЛЕЙ ======
 function drawTaskDetail() {
   fill(0, 0, 0, 150); noStroke(); rect(0, 0, 1200, 850);
-// Закрытие по клику на фон обрабатывается в mousePressed
   var cx = 250, cy = 200, cw = 700, ch = 400;
   fill('#fff'); stroke('#636e72'); strokeWeight(2); rect(cx, cy, cw, ch, 12);
   noStroke();
@@ -353,29 +352,56 @@ function drawTaskDetail() {
     if (!form) {
       form = document.createElement('div');
       form.id = 'edit-form';
-      form.style.cssText = 'position:fixed; top:250px; left:270px; z-index:10000;';
-      form.innerHTML = '<input type="text" id="edit-title" style="width:280px;padding:8px;margin-bottom:8px;border:1px solid #b2bec3;border-radius:4px;font-size:13px;display:block;"><input type="text" id="edit-hours" style="width:80px;padding:8px;margin-right:8px;margin-bottom:8px;border:1px solid #b2bec3;border-radius:4px;font-size:13px;"><input type="text" id="edit-deadline" style="width:140px;padding:8px;margin-bottom:8px;border:1px solid #b2bec3;border-radius:4px;font-size:13px;"><textarea id="edit-desc" style="width:400px;height:80px;padding:8px;margin-bottom:10px;border:1px solid #b2bec3;border-radius:4px;font-size:13px;display:block;"></textarea><button id="edit-save" style="padding:8px 20px;background:#00b894;color:#fff;border:none;border-radius:4px;cursor:pointer;font-size:14px;margin-right:8px;">💾 Сохранить</button><button id="edit-cancel" style="padding:8px 20px;background:#dfe6e9;color:#2d3436;border:none;border-radius:4px;cursor:pointer;font-size:14px;">Отмена</button>';
+      form.style.cssText = 'position:fixed; top:250px; left:270px; z-index:10000; background:#fff; padding:15px; border-radius:8px;';
+      form.innerHTML = `
+        <input type="text" id="edit-title" placeholder="Название" style="width:280px;padding:8px;margin-bottom:8px;border:1px solid #b2bec3;border-radius:4px;font-size:13px;display:block;">
+        <input type="text" id="edit-hours" placeholder="Часы" style="width:80px;padding:8px;margin-right:8px;margin-bottom:8px;border:1px solid #b2bec3;border-radius:4px;font-size:13px;">
+        <input type="text" id="edit-deadline" placeholder="Дедлайн" style="width:140px;padding:8px;margin-bottom:8px;border:1px solid #b2bec3;border-radius:4px;font-size:13px;">
+        <textarea id="edit-desc" placeholder="Описание" style="width:400px;height:80px;padding:8px;margin-bottom:10px;border:1px solid #b2bec3;border-radius:4px;font-size:13px;display:block;"></textarea>
+        <button id="edit-save" style="padding:8px 20px;background:#00b894;color:#fff;border:none;border-radius:4px;cursor:pointer;font-size:14px;margin-right:8px;">💾 Сохранить</button>
+        <button id="edit-cancel" style="padding:8px 20px;background:#dfe6e9;color:#2d3436;border:none;border-radius:4px;cursor:pointer;font-size:14px;">Отмена</button>
+      `;
       document.body.appendChild(form);
       
       document.getElementById('edit-save').onclick = function() {
-        if (document.getElementById('edit-title').value) selectedTask.title = document.getElementById('edit-title').value;
-        if (document.getElementById('edit-hours').value) selectedTask.hours = parseFloat(document.getElementById('edit-hours').value);
-        if (document.getElementById('edit-deadline').value) selectedTask.deadline = document.getElementById('edit-deadline').value;
-        selectedTask.description = document.getElementById('edit-desc').value;
+        var newTitle = document.getElementById('edit-title').value;
+        var newHours = document.getElementById('edit-hours').value;
+        var newDeadline = document.getElementById('edit-deadline').value;
+        var newDesc = document.getElementById('edit-desc').value;
+        
+        if (newTitle) selectedTask.title = newTitle;
+        if (newHours) selectedTask.hours = parseFloat(newHours) || selectedTask.hours;
+        if (newDeadline) selectedTask.deadline = newDeadline;
+        selectedTask.description = newDesc;
+        
         saveData();
         editMode = false;
         form.style.display = 'none';
       };
+      
       document.getElementById('edit-cancel').onclick = function() {
         editMode = false;
         form.style.display = 'none';
       };
+      
+      // Сохранение по Enter
+      form.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' && !e.shiftKey) {
+          e.preventDefault();
+          document.getElementById('edit-save').click();
+        }
+        if (e.key === 'Escape') {
+          document.getElementById('edit-cancel').click();
+        }
+      });
     }
+    
     form.style.display = 'block';
-    document.getElementById('edit-title').value = editTitle || selectedTask.title;
-    document.getElementById('edit-hours').value = editHours || selectedTask.hours;
-    document.getElementById('edit-deadline').value = editDeadline || selectedTask.deadline;
-    document.getElementById('edit-desc').value = editDesc || selectedTask.description || '';
+    document.getElementById('edit-title').value = selectedTask.title;
+    document.getElementById('edit-hours').value = selectedTask.hours;
+    document.getElementById('edit-deadline').value = selectedTask.deadline;
+    document.getElementById('edit-desc').value = selectedTask.description || '';
+    document.getElementById('edit-title').focus();
   } else {
     var form = document.getElementById('edit-form');
     if (form) form.style.display = 'none';
@@ -396,13 +422,11 @@ function drawTaskDetail() {
 }
 
 function isInDetailWindow() {
-  // Проверяем и canvas-окно, и HTML-форму
-  var inCanvas = mouseX > 250 && mouseX < 950 && mouseY > 200 && mouseY < 600;
   var form = document.getElementById('edit-form');
   if (form && form.style.display === 'block') {
     return true; // Если форма открыта, всегда считаем что мы внутри
   }
-  return inCanvas;
+  return mouseX > 250 && mouseX < 950 && mouseY > 200 && mouseY < 600;
 }
 
 // ====== КЛИКИ ======
