@@ -397,11 +397,6 @@ function drawTaskDetail() {
     }
     
     form.style.display = 'block';
-    document.getElementById('edit-title').value = selectedTask.title;
-    document.getElementById('edit-hours').value = selectedTask.hours;
-    document.getElementById('edit-deadline').value = selectedTask.deadline;
-    document.getElementById('edit-desc').value = selectedTask.description || '';
-    document.getElementById('edit-title').focus();
   } else {
     var form = document.getElementById('edit-form');
     if (form) form.style.display = 'none';
@@ -444,11 +439,23 @@ if (!isInDetailWindow() && !editMode) {
     if (editMode) return;
     var cx = 250, cy = 200;
     if (mouseX > cx+20 && mouseX < cx+170 && mouseY > cy+350 && mouseY < cy+386) {
-      editMode = true;
+            editMode = true;
       editTitle = selectedTask.title;
       editHours = String(selectedTask.hours);
       editDeadline = selectedTask.deadline;
       editDesc = selectedTask.description || '';
+      // Заполняем поля формы здесь, а не в draw
+      setTimeout(function() {
+        var titleEl = document.getElementById('edit-title');
+        if (titleEl) titleEl.value = selectedTask.title;
+        var hoursEl = document.getElementById('edit-hours');
+        if (hoursEl) hoursEl.value = selectedTask.hours;
+        var deadlineEl = document.getElementById('edit-deadline');
+        if (deadlineEl) deadlineEl.value = selectedTask.deadline;
+        var descEl = document.getElementById('edit-desc');
+        if (descEl) descEl.value = selectedTask.description || '';
+        if (titleEl) titleEl.focus();
+      }, 50);
       return;
     }
     if (mouseX > cx+520 && mouseX < cx+670 && mouseY > cy+350 && mouseY < cy+386) {
