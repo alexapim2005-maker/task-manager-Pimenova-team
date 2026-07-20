@@ -498,13 +498,13 @@ if (!isInDetailWindow() && !editMode) {
         for (var k = 0; k < j; k++) {
           ty += (active[k].description && active[k].description.length > 0) ? 48 : 34;
         }
-        if (mouseX>block.x+10&&mouseX<block.x+308&&mouseY>ty+2&&mouseY<ty+30){
+             if (mouseX>block.x+10&&mouseX<block.x+26&&mouseY>ty+6&&mouseY<ty+22){active[j].complete();saveData();return;}
+        if (mouseX>block.x+308&&mouseX<block.x+330&&mouseY>ty+6&&mouseY<ty+26){currentManager.removeTask(active[j]);return;}
+        if (mouseX>block.x+28&&mouseX<block.x+308&&mouseY>ty+2&&mouseY<ty+30){
           selectedTask = active[j];
           editMode = false;
           return;
         }
-        if (mouseX>block.x+308&&mouseX<block.x+330&&mouseY>ty+6&&mouseY<ty+26){currentManager.removeTask(active[j]);return;}
-        if (mouseX>block.x+10&&mouseX<block.x+26&&mouseY>ty+6&&mouseY<ty+22){active[j].complete();saveData();return;}
       }
     }
     var completed=currentManager.getCompletedTasks();
